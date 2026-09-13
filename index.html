@@ -326,6 +326,7 @@
   <!-- WEBRTC CALL SCREEN -->
   <div id="webrtc-container">
     <div id="callStatusLabel" style="position:absolute; top:60px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.55); color:#fff; font-size:13px; font-weight:700; padding:6px 14px; border-radius:20px; z-index:210;">جاري الاتصال...</div>
+    <div id="debugPanel" style="position:absolute; top:100px; left:10px; right:10px; max-height:220px; overflow-y:auto; background:rgba(0,0,0,0.75); color:#0f0; font-size:11px; font-family:monospace; padding:8px; border-radius:8px; z-index:210; direction:ltr; text-align:left;"></div>
     <div class="video-grid">
       <video id="remoteVideo" autoplay playsinline></video>
       <video id="localVideo" autoplay playsinline muted></video>
@@ -693,11 +694,18 @@ let incomingCaller = '';
 let incomingHasVideo = true;
 
 function showDebugToast(text){
-  const t = document.createElement('div');
-  t.innerText = text;
-  t.style.cssText = 'position:fixed; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#fff; padding:8px 16px; border-radius:10px; font-size:13px; z-index:999; max-width:90%; text-align:center;';
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  logDebug(text);
+}
+
+function logDebug(text){
+  const panel = document.getElementById('debugPanel');
+  if(!panel) { console.log(text); return; }
+  const line = document.createElement('div');
+  const t = new Date().toLocaleTimeString('en-GB');
+  line.innerText = '[' + t + '] ' + text;
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+  console.log(text);
 }
 
 function handleIncomingSignal(payload){
@@ -726,28 +734,37 @@ function handleIncomingSignal(payload){
   else if(payload.kind === 'call-accept'){
     // الطرف الآخر وافق على المكالمة الآن فقط ننشئ الـ offer الحقيقي
     // (الفيديو المحلي وشاشة المكالمة ظاهرين عندنا من الأول، هذا بس يجهز اتصال WebRTC الفعلي)
+    logDebug('☎️ استلمت call-accept، سأنشئ peerConnection وoffer الآن');
     ringingTone.pause(); ringingTone.currentTime = 0;
     createPeerConnection(true);
   }
   else if(payload.sdp){
-    if(!peerConnection) return; // لا يوجد اتصال جاهز بعد لاستقبال الإشارة
+    logDebug('📩 استلمت sdp نوع=' + payload.sdp.type + ' | peerConnection موجود=' + !!peerConnection);
+    if(!peerConnection){
+      logDebug('❌ تم تجاهل الـ sdp لأنه لا يوجد peerConnection بعد!');
+      return;
+    }
     peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp)).then(() => {
+      logDebug('✅ تم ضبط remote description (' + payload.sdp.type + ')');
       // بعد تعيين الوصف البعيد، طبّق أي مرشحات ICE كانت بالانتظار
-      pendingCandidates.forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(e => console.error(e)));
+      logDebug('🧊 تطبيق ' + pendingCandidates.length + ' مرشح ICE مؤجل');
+      pendingCandidates.forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(e => logDebug('❌ خطأ addIceCandidate: ' + e.message)));
       pendingCandidates = [];
       if(payload.sdp.type === 'offer'){
         peerConnection.createAnswer().then(answer => {
+          logDebug('📝 تم إنشاء answer، جاري الإرسال');
           peerConnection.setLocalDescription(answer);
           sendWebRTCSignal(activeCallWith, { sdp: answer });
-        });
+        }).catch(e => logDebug('❌ خطأ بإنشاء answer: ' + e.message));
       }
-    });
+    }).catch(e => logDebug('❌ خطأ setRemoteDescription: ' + e.message));
   }
   else if(payload.ice){
     if(peerConnection && peerConnection.remoteDescription){
-      peerConnection.addIceCandidate(new RTCIceCandidate(payload.ice)).catch(e => console.error(e));
+      peerConnection.addIceCandidate(new RTCIceCandidate(payload.ice)).catch(e => logDebug('❌ خطأ addIceCandidate مباشر: ' + e.message));
     } else {
       // لم يصل الـ offer/answer بعد، خزّن المرشح لتطبيقه لاحقاً
+      logDebug('⏳ تخزين مرشح ICE مؤقتاً (remoteDescription غير جاهز)');
       pendingCandidates.push(payload.ice);
     }
   }
@@ -757,6 +774,8 @@ async function startCall(withVideo){
   activeCallWith = currentReceiver;
   isVideoCallActive = withVideo;
   pendingCandidates = [];
+  const dp = document.getElementById('debugPanel'); if(dp) dp.innerHTML = '';
+  logDebug('▶️ startCall, activeCallWith=' + activeCallWith);
 
   ringingTone.play().catch(e => {});
 
@@ -775,6 +794,8 @@ async function acceptCall(){
   ringingTone.pause(); ringingTone.currentTime = 0;
   document.getElementById('incomingCall').classList.remove('active');
   pendingCandidates = [];
+  const dp = document.getElementById('debugPanel'); if(dp) dp.innerHTML = '';
+  logDebug('▶️ acceptCall, incomingCaller=' + incomingCaller);
 
   await setupWebRTCStream(incomingHasVideo);
   document.getElementById('webrtc-container').style.display = 'flex';
@@ -826,38 +847,48 @@ function updateCallStatusLabel(state){
 }
 
 function createPeerConnection(isInitiator){
+  logDebug('🔧 createPeerConnection isInitiator=' + isInitiator + ' localStream=' + (localStream ? (localStream.getTracks().length + ' tracks') : 'NULL'));
   peerConnection = new RTCPeerConnection(rtcConfig);
   remoteStream = new MediaStream();
   document.getElementById('remoteVideo').srcObject = remoteStream;
 
   if(localStream){
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  } else {
+    logDebug('⚠️ لا يوجد localStream وقت إنشاء الاتصال!');
   }
 
   peerConnection.ontrack = event => {
+    logDebug('📹 ontrack: استلمت مسار ' + event.track.kind);
     event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
   };
 
   peerConnection.onicecandidate = event => {
     if(event.candidate){
+      logDebug('🧊 مرشح ICE محلي (' + event.candidate.type + ') يُرسل...');
       sendWebRTCSignal(activeCallWith, { ice: event.candidate });
+    } else {
+      logDebug('🧊 انتهى تجميع مرشحات ICE');
     }
   };
 
-  // تشخيص: راقب console أثناء المكالمة لمعرفة سبب فشل الاتصال إذا استمرت المشكلة
   peerConnection.oniceconnectionstatechange = () => {
-    console.log('ICE connection state:', peerConnection.iceConnectionState);
+    logDebug('🔌 ICE state: ' + peerConnection.iceConnectionState);
     updateCallStatusLabel(peerConnection.iceConnectionState);
   };
   peerConnection.onconnectionstatechange = () => {
-    console.log('Connection state:', peerConnection.connectionState);
+    logDebug('🔗 Connection state: ' + peerConnection.connectionState);
+  };
+  peerConnection.onsignalingstatechange = () => {
+    logDebug('📶 Signaling state: ' + peerConnection.signalingState);
   };
 
   if(isInitiator){
     peerConnection.createOffer().then(offer => {
+      logDebug('📝 تم إنشاء offer، جاري الإرسال');
       peerConnection.setLocalDescription(offer);
       sendWebRTCSignal(activeCallWith, { sdp: offer });
-    });
+    }).catch(e => logDebug('❌ خطأ بإنشاء offer: ' + e.message));
   }
 }
 
