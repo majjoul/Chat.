@@ -325,6 +325,7 @@
 
   <!-- WEBRTC CALL SCREEN -->
   <div id="webrtc-container">
+    <div id="callStatusLabel" style="position:absolute; top:14px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.55); color:#fff; font-size:13px; font-weight:700; padding:6px 14px; border-radius:20px; z-index:210;">جاري الاتصال...</div>
     <div class="video-grid">
       <video id="remoteVideo" autoplay playsinline></video>
       <video id="localVideo" autoplay playsinline muted></video>
@@ -390,6 +391,16 @@ const rtcConfig = {
     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
   ]
 };
+
+window.addEventListener('click', function unlockRingtoneAudio(){
+  ringingTone.muted = true;
+  ringingTone.play().then(() => {
+    ringingTone.pause();
+    ringingTone.currentTime = 0;
+    ringingTone.muted = false;
+  }).catch(() => {});
+  window.removeEventListener('click', unlockRingtoneAudio);
+}, { once: true });
 
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('chat_current_user');
@@ -670,7 +681,10 @@ function sendWebRTCSignal(toUser, data){
   ch.subscribe(status => {
     if(status === 'SUBSCRIBED'){
       ch.send({ type:'broadcast', event:'signal', payload:{ ...data, from: currentUsername } });
+      showDebugToast('📤 أرسلت: ' + data.kind + ' إلى ' + toUser);
       setTimeout(() => supabaseClient.removeChannel(ch), 1000);
+    } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+      showDebugToast('❌ فشل إرسال الإشارة إلى ' + toUser + ' (' + status + ')');
     }
   });
 }
@@ -678,7 +692,16 @@ function sendWebRTCSignal(toUser, data){
 let incomingCaller = '';
 let incomingHasVideo = true;
 
+function showDebugToast(text){
+  const t = document.createElement('div');
+  t.innerText = text;
+  t.style.cssText = 'position:fixed; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#fff; padding:8px 16px; border-radius:10px; font-size:13px; z-index:999; max-width:90%; text-align:center;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
 function handleIncomingSignal(payload){
+  showDebugToast('📥 وصلت إشارة: ' + payload.kind + (payload.from ? (' من ' + payload.from) : (payload.sdp ? ' (sdp)' : (payload.ice ? ' (ice)' : ''))));
   if(payload.kind === 'call-offer'){
     incomingCaller = payload.from;
     incomingHasVideo = payload.hasVideo;
@@ -741,7 +764,10 @@ async function startCall(withVideo){
   // لكن الـ offer الفعلي (WebRTC) يُرسل لاحقاً فقط بعد ما يقبل الطرف الآخر.
   await setupWebRTCStream(withVideo);
   document.getElementById('webrtc-container').style.display = 'flex';
+  const statusEl = document.getElementById('callStatusLabel');
+  if(statusEl){ statusEl.style.display = 'block'; statusEl.innerText = 'جاري الاتصال...'; }
 
+  console.log('[تشخيص] إرسال إشارة اتصال إلى:', activeCallWith);
   sendWebRTCSignal(activeCallWith, { kind: 'call-offer', hasVideo: withVideo });
 }
 
@@ -752,6 +778,8 @@ async function acceptCall(){
 
   await setupWebRTCStream(incomingHasVideo);
   document.getElementById('webrtc-container').style.display = 'flex';
+  const statusEl2 = document.getElementById('callStatusLabel');
+  if(statusEl2){ statusEl2.style.display = 'block'; statusEl2.innerText = 'جاري الاتصال...'; }
 
   createPeerConnection(false);
 
@@ -777,6 +805,26 @@ async function setupWebRTCStream(withVideo){
   }
 }
 
+function updateCallStatusLabel(state){
+  const el = document.getElementById('callStatusLabel');
+  if(!el) return;
+  const map = {
+    'new': 'جاري الاتصال...',
+    'checking': 'جاري تجربة الاتصال...',
+    'connected': 'متصل ✅',
+    'completed': 'متصل ✅',
+    'disconnected': 'انقطع الاتصال مؤقتاً...',
+    'failed': 'فشل الاتصال ❌ (مشكلة شبكة)',
+    'closed': 'انتهت المكالمة'
+  };
+  el.innerText = map[state] || state;
+  if(state === 'connected' || state === 'completed'){
+    setTimeout(() => { if(el) el.style.display = 'none'; }, 2000);
+  } else {
+    el.style.display = 'block';
+  }
+}
+
 function createPeerConnection(isInitiator){
   peerConnection = new RTCPeerConnection(rtcConfig);
   remoteStream = new MediaStream();
@@ -799,6 +847,7 @@ function createPeerConnection(isInitiator){
   // تشخيص: راقب console أثناء المكالمة لمعرفة سبب فشل الاتصال إذا استمرت المشكلة
   peerConnection.oniceconnectionstatechange = () => {
     console.log('ICE connection state:', peerConnection.iceConnectionState);
+    updateCallStatusLabel(peerConnection.iceConnectionState);
   };
   peerConnection.onconnectionstatechange = () => {
     console.log('Connection state:', peerConnection.connectionState);
