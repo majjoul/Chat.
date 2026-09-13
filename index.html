@@ -373,7 +373,12 @@ let pendingCandidates = [];
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    // TURN تجريبي مجاني (Open Relay) - يساعد لما شبكات الجوال تمنع الاتصال المباشر (STUN فقط ما يكفي غالباً).
+    // في بيئة إنتاج حقيقية يفضل تستخدم TURN خاص بك (coturn أو خدمة مدفوعة) بدل هذا.
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
   ]
 };
 
@@ -779,6 +784,14 @@ function createPeerConnection(isInitiator){
     if(event.candidate){
       sendWebRTCSignal(activeCallWith, { ice: event.candidate });
     }
+  };
+
+  // تشخيص: راقب console أثناء المكالمة لمعرفة سبب فشل الاتصال إذا استمرت المشكلة
+  peerConnection.oniceconnectionstatechange = () => {
+    console.log('ICE connection state:', peerConnection.iceConnectionState);
+  };
+  peerConnection.onconnectionstatechange = () => {
+    console.log('Connection state:', peerConnection.connectionState);
   };
 
   if(isInitiator){
