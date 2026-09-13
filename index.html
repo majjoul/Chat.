@@ -368,6 +368,7 @@ let remoteStream = null;
 let peerConnection = null;
 let activeCallWith = '';
 let isVideoCallActive = true;
+let pendingCandidates = [];
 
 const rtcConfig = {
   iceServers: [
@@ -685,18 +686,35 @@ function handleIncomingSignal(payload){
   else if(payload.kind === 'call-hangup'){
     hangupCall(false);
   }
-  else if(peerConnection){
-    if(payload.sdp){
-      peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp)).then(() => {
-        if(payload.sdp.type === 'offer'){
-          peerConnection.createAnswer().then(answer => {
-            peerConnection.setLocalDescription(answer);
-            sendWebRTCSignal(activeCallWith, { sdp: answer });
-          });
-        }
-      });
-    } else if(payload.ice){
+  else if(payload.kind === 'call-accept'){
+    // الطرف الآخر وافق على المكالمة الآن فقط ننشئ الـ offer الحقيقي
+    ringingTone.pause(); ringingTone.currentTime = 0;
+    (async () => {
+      await setupWebRTCStream(isVideoCallActive);
+      document.getElementById('webrtc-container').style.display = 'flex';
+      createPeerConnection(true);
+    })();
+  }
+  else if(payload.sdp){
+    if(!peerConnection) return; // لا يوجد اتصال جاهز بعد لاستقبال الإشارة
+    peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp)).then(() => {
+      // بعد تعيين الوصف البعيد، طبّق أي مرشحات ICE كانت بالانتظار
+      pendingCandidates.forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(e => console.error(e)));
+      pendingCandidates = [];
+      if(payload.sdp.type === 'offer'){
+        peerConnection.createAnswer().then(answer => {
+          peerConnection.setLocalDescription(answer);
+          sendWebRTCSignal(activeCallWith, { sdp: answer });
+        });
+      }
+    });
+  }
+  else if(payload.ice){
+    if(peerConnection && peerConnection.remoteDescription){
       peerConnection.addIceCandidate(new RTCIceCandidate(payload.ice)).catch(e => console.error(e));
+    } else {
+      // لم يصل الـ offer/answer بعد، خزّن المرشح لتطبيقه لاحقاً
+      pendingCandidates.push(payload.ice);
     }
   }
 }
@@ -704,24 +722,26 @@ function handleIncomingSignal(payload){
 async function startCall(withVideo){
   activeCallWith = currentReceiver;
   isVideoCallActive = withVideo;
-  
-  ringingTone.play().catch(e => {});
-  sendWebRTCSignal(activeCallWith, { kind: 'call-offer', hasVideo: withVideo });
+  pendingCandidates = [];
 
-  await setupWebRTCStream(withVideo);
-  document.getElementById('webrtc-container').style.display = 'flex';
-  
-  createPeerConnection(true);
+  ringingTone.play().catch(e => {});
+  // نرسل فقط إشعار "اتصال وارد" الآن. الـ offer الحقيقي يُنشأ فقط بعد أن يقبل الطرف الآخر،
+  // حتى لا تضيع رسائل SDP/ICE المرسلة أثناء فترة الرنين قبل إنشاء peerConnection عند المستقبل.
+  sendWebRTCSignal(activeCallWith, { kind: 'call-offer', hasVideo: withVideo });
 }
 
 async function acceptCall(){
   ringingTone.pause(); ringingTone.currentTime = 0;
   document.getElementById('incomingCall').classList.remove('active');
-  
+  pendingCandidates = [];
+
   await setupWebRTCStream(incomingHasVideo);
   document.getElementById('webrtc-container').style.display = 'flex';
-  
+
   createPeerConnection(false);
+
+  // نخبر المتصل بأننا جاهزون الآن فقط لاستقبال الـ offer
+  sendWebRTCSignal(incomingCaller, { kind: 'call-accept' });
 }
 
 function declineCall(){
@@ -789,6 +809,7 @@ function cleanupCall(){
   document.getElementById('webrtc-container').style.display = 'none';
   document.getElementById('incomingCall').classList.remove('active');
   activeCallWith = '';
+  pendingCandidates = [];
 }
 
 // أزرار التحكم داخل المكالمة
