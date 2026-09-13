@@ -354,6 +354,15 @@ const SUPABASE_URL = 'https://roqpinipcgwqeqqfpcjm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// يلتقط أي خطأ برمجي ويعرضه لك مباشرة على الشاشة (بدون الحاجة لتوصيل الجوال بكمبيوتر)
+window.onerror = function(message, source, lineno, colno, error){
+  alert('⚠️ خطأ برمجي:\n' + message + '\n(سطر ' + lineno + ')');
+  return false;
+};
+window.addEventListener('unhandledrejection', function(event){
+  alert('⚠️ خطأ (Promise):\n' + (event.reason && event.reason.message ? event.reason.message : event.reason));
+});
+
 let currentUsername = '';
 let currentReceiver = '';
 let friends = [];
@@ -693,12 +702,9 @@ function handleIncomingSignal(payload){
   }
   else if(payload.kind === 'call-accept'){
     // الطرف الآخر وافق على المكالمة الآن فقط ننشئ الـ offer الحقيقي
+    // (الفيديو المحلي وشاشة المكالمة ظاهرين عندنا من الأول، هذا بس يجهز اتصال WebRTC الفعلي)
     ringingTone.pause(); ringingTone.currentTime = 0;
-    (async () => {
-      await setupWebRTCStream(isVideoCallActive);
-      document.getElementById('webrtc-container').style.display = 'flex';
-      createPeerConnection(true);
-    })();
+    createPeerConnection(true);
   }
   else if(payload.sdp){
     if(!peerConnection) return; // لا يوجد اتصال جاهز بعد لاستقبال الإشارة
@@ -730,8 +736,12 @@ async function startCall(withVideo){
   pendingCandidates = [];
 
   ringingTone.play().catch(e => {});
-  // نرسل فقط إشعار "اتصال وارد" الآن. الـ offer الحقيقي يُنشأ فقط بعد أن يقبل الطرف الآخر،
-  // حتى لا تضيع رسائل SDP/ICE المرسلة أثناء فترة الرنين قبل إنشاء peerConnection عند المستقبل.
+
+  // نجهز الكاميرا/المايك ونعرض شاشة المكالمة فوراً حتى يشوف المتصل نفسه وهو يرن،
+  // لكن الـ offer الفعلي (WebRTC) يُرسل لاحقاً فقط بعد ما يقبل الطرف الآخر.
+  await setupWebRTCStream(withVideo);
+  document.getElementById('webrtc-container').style.display = 'flex';
+
   sendWebRTCSignal(activeCallWith, { kind: 'call-offer', hasVideo: withVideo });
 }
 
