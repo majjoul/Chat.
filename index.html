@@ -7,8 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- مكتبة Jitsi للمكالمات الصوتية والمرئية المضمونة في التطبيقات -->
-<script src='https://8x8.vc/vpaas-magic-cookie-926f04702b8d415eb26d2e617d59b21f/external_api.js'></script>
 <style>
   :root{
     --app-bg: #0d1117;
@@ -133,9 +131,6 @@
 
   /* ---------- SETTINGS SCREEN ---------- */
   .settings-wrap{ flex:1; overflow-y:auto; padding:20px; background:var(--app-bg); }
-  .permission-box{ background:var(--app-panel); border-radius:12px; padding:16px; margin-bottom:20px; border:1px solid var(--app-border); }
-  .permission-box h4{ font-size:15px; margin-bottom:8px; color:var(--app-primary); }
-  .permission-box p{ font-size:13px; color:var(--app-muted); margin-bottom:12px; line-height:1.5; }
 
   /* ---------- CHAT SCREEN ---------- */
   .chat-top{ display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:var(--app-header); border-bottom:1px solid var(--app-border); }
@@ -156,6 +151,8 @@
   .bubble.me{ align-self:flex-start; background: var(--app-light-primary); border-top-right-radius:0; color:#f0f6fc; border: 1px solid rgba(59, 130, 246, 0.3); }
   .bubble.them{ align-self:flex-end; background:var(--app-incoming); border-top-left-radius:0; color:#f0f6fc; border: 1px solid var(--app-border); }
   
+  .bubble a { color: #60a5fa; text-decoration: underline; font-weight: bold; }
+
   .composer{ display:flex; gap:8px; padding:10px 16px; background:var(--app-header); align-items:center; border-top: 1px solid var(--app-border); }
   .composer input{
     flex:1; padding:11px 16px; border-radius:10px; background:var(--app-panel);
@@ -176,27 +173,6 @@
   }
 
   audio.voice-player { width: 200px; height: 36px; accent-color: var(--app-primary); }
-
-  /* ---------- JITSI CALL CONTAINER ---------- */
-  #jitsi-container {
-    display: none; position: absolute; inset: 0; background: #000; z-index: 200;
-    flex-direction: column;
-  }
-  #jitsi-frame { flex: 1; width: 100%; height: 100%; }
-
-  /* ---------- INCOMING CALL MODAL ---------- */
-  #incomingCall{
-    display:none; position:absolute; inset:0; background:rgba(1,4,9,0.96);
-    z-index:150; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:30px;
-  }
-  #incomingCall.active{ display:flex; }
-  #incomingCall .avatar{ width:100px; height:100px; font-size:36px; background:#21262d; }
-  #incomingCall h3{ font-size:22px; font-weight:700; color:var(--app-text); }
-  #incomingCall p{ color:var(--app-muted); font-size:14px; }
-  .incoming-actions{ display:flex; gap:40px; margin-top:20px; }
-  .call-btn{ width:60px; height:60px; border-radius:50%; border:none; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .call-btn.end{ background:var(--app-danger); color:#fff; }
-  .call-btn.accept{ background:#238636; color:#fff; }
 </style>
 </head>
 <body>
@@ -263,12 +239,6 @@
       </div>
     </div>
     <div class="settings-wrap">
-      <div class="permission-box">
-        <h4>أذونات الإشعارات والكاميرا والمايكروفون</h4>
-        <p>لتفعيل المكالمات بشكل سليم في التطبيق، اضغط هنا للسماح بالأذونات:</p>
-        <button class="btn-primary" id="requestPermissionsBtn" style="margin-top:0;">منح الأذونات الشاملة 🔔📷🎙️</button>
-      </div>
-
       <div style="background:var(--app-panel); border-radius:12px; padding:16px; border: 1px solid var(--app-border);">
         <h4 style="margin-bottom:14px; font-size:15px; color:var(--app-text);">تعديل بيانات الحساب</h4>
         <div class="field" style="margin-bottom:12px;">
@@ -296,8 +266,8 @@
         </div>
       </div>
       <div class="chat-actions">
-        <button class="app-icon-btn" id="videoCallBtn" title="مكالمة فيديو">📹</button>
-        <button class="app-icon-btn" id="audioCallBtn" title="مكالمة صوتية">📞</button>
+        <button class="app-icon-btn" id="videoCallBtn" title="إرسال رابط مكالمة فيديو">📹</button>
+        <button class="app-icon-btn" id="audioCallBtn" title="إرسال رابط مكالمة صوتية">📞</button>
       </div>
     </div>
 
@@ -306,22 +276,6 @@
       <input id="msgInput" type="text" placeholder="اكتب رسالة...">
       <button id="sendBtn" title="إرسال نص">➤</button>
       <button id="voiceBtn" title="تسجيل صوتي">🎙️</button>
-    </div>
-  </div>
-
-  <!-- CALL SCREEN (JITSI) -->
-  <div id="jitsi-container">
-    <div id="jitsi-frame"></div>
-  </div>
-
-  <!-- INCOMING CALL MODAL -->
-  <div id="incomingCall">
-    <div class="avatar" id="incomingAvatar">?</div>
-    <h3 id="incomingName"></h3>
-    <p id="incomingType">مكالمة واردة...</p>
-    <div class="incoming-actions">
-      <button class="call-btn end" id="declineCallBtn">✕</button>
-      <button class="call-btn accept" id="acceptCallBtn">📞</button>
     </div>
   </div>
 
@@ -336,10 +290,6 @@ let currentUsername = '';
 let currentReceiver = '';
 let friends = [];
 let isSignUp = false;
-let myInboxChannel = null;
-let activeJitsiApi = null;
-let ringingTone = new Audio('https://actions.google.com/sounds/v1/telephones/telephone_ring_tone.ogg');
-ringingTone.loop = true;
 
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('chat_current_user');
@@ -349,26 +299,8 @@ window.addEventListener('DOMContentLoaded', () => {
     showScreen('screen-friends');
     loadExistingChats();
     subscribeToRealtime();
-    subscribeToCallSignaling();
   }
 });
-
-async function requestNotificationPermission() {
-  if (window.Notification && Notification.permission !== "granted") {
-    await Notification.requestPermission();
-  }
-}
-
-document.getElementById('requestPermissionsBtn').onclick = async () => {
-  try {
-    await requestNotificationPermission();
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    stream.getTracks().forEach(track => track.stop());
-    alert('تم منح أذونات الكاميرا والمايكروفون بنجاح!');
-  } catch (e) {
-    alert('خطأ في الأذونات: ' + e.message);
-  }
-};
 
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -407,8 +339,6 @@ document.getElementById('authBtn').onclick = async () => {
     return;
   }
 
-  requestNotificationPermission();
-
   if (isSignUp) {
     const { data: existing } = await supabaseClient
       .from('profiles').select('username').eq('username', username).single();
@@ -440,7 +370,6 @@ function loginSuccess(username) {
   showScreen('screen-friends');
   loadExistingChats();
   subscribeToRealtime();
-  subscribeToCallSignaling();
 }
 
 document.getElementById('logoutBtn').onclick = () => {
@@ -595,7 +524,12 @@ function appendMessage(msg){
   if(msg.audio_url){
     div.innerHTML = `<div style="font-size:12px; margin-bottom:4px; opacity:0.8;">🎤 رسالة صوتية</div><audio controls class="voice-player" src="${msg.audio_url}"></audio>`;
   } else {
-    div.innerText = msg.text;
+    // التحقق إذا كان النص يحتوي على رابط ويب لعرضه بشكل قابل للنقر
+    let formattedText = msg.text;
+    if (formattedText.startsWith('http://') || formattedText.startsWith('https://')) {
+      formattedText = `<a href="${formattedText}" target="_blank">🔗 اضغط هنا للانضمام للمكالمة</a>`;
+    }
+    div.innerHTML = formattedText;
   }
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
@@ -608,115 +542,18 @@ function subscribeToRealtime(){
     }).subscribe();
 }
 
-/* Call Signaling via Supabase */
-function subscribeToCallSignaling(){
-  if(myInboxChannel) supabaseClient.removeChannel(myInboxChannel);
-  myInboxChannel = supabaseClient.channel('calls-' + currentUsername);
-  myInboxChannel.on('broadcast', { event:'signal' }, ({ payload }) => handleIncomingSignal(payload)).subscribe();
-}
-
-function sendSignal(toUser, data){
-  const ch = supabaseClient.channel('calls-' + toUser);
-  ch.subscribe(status => {
-    if(status === 'SUBSCRIBED'){
-      ch.send({ type:'broadcast', event:'signal', payload:{ ...data, from: currentUsername } });
-      setTimeout(() => supabaseClient.removeChannel(ch), 800);
-    }
-  });
-}
-
-let incomingCaller = '';
-let incomingRoom = '';
-let incomingHasVideo = true;
-
-function handleIncomingSignal(payload){
-  if(payload.kind === 'call-offer'){
-    incomingCaller = payload.from;
-    incomingRoom = payload.roomName;
-    incomingHasVideo = payload.hasVideo;
-
-    ringingTone.play().catch(e => {});
-
-    document.getElementById('incomingAvatar').innerText = initials(incomingCaller);
-    document.getElementById('incomingName').innerText = incomingCaller;
-    document.getElementById('incomingType').innerText = incomingHasVideo ? 'مكالمة فيديو واردة...' : 'مكالمة صوتية واردة...';
-    document.getElementById('incomingCall').classList.add('active');
-  }
-  else if(payload.kind === 'call-decline'){
-    ringingTone.pause(); ringingTone.currentTime = 0;
-    alert('رفض الطرف الآخر المكالمة.');
-  }
-}
-
-function startCall(withVideo){
-  const roomName = 'msgapp_room_' + [currentUsername, currentReceiver].sort().join('_');
-  sendSignal(currentReceiver, { kind: 'call-offer', roomName, hasVideo });
+// إرسال رابط مكالمة (فيديو أو صوت)
+function sendCallLink(isVideo) {
+  const roomCode = Math.random().toString(36.25).substring(2, 9);
+  const callUrl = `https://meet.jit.si/MessageApp_${roomCode}`;
+  const callType = isVideo ? '📹 رابط مكالمة فيديو:' : '📞 رابط مكالمة صوتية:';
   
-  ringingTone.play().catch(e => {});
-  launchJitsi(roomName, withVideo);
+  sendMessage(`${callType}\n${callUrl}`);
+  window.open(callUrl, '_blank');
 }
 
-function acceptCall(){
-  ringingTone.pause(); ringingTone.currentTime = 0;
-  document.getElementById('incomingCall').classList.remove('active');
-  launchJitsi(incomingRoom, incomingHasVideo);
-}
-
-function declineCall(){
-  ringingTone.pause(); ringingTone.currentTime = 0;
-  document.getElementById('incomingCall').classList.remove('active');
-  if(incomingCaller) sendSignal(incomingCaller, { kind: 'call-decline' });
-  incomingCaller = '';
-}
-
-function launchJitsi(roomName, withVideo){
-  document.getElementById('jitsi-container').style.display = 'flex';
-  const domain = 'meet.jit.si';
-  const options = {
-    roomName: roomName,
-    width: '100%',
-    height: '100%',
-    parentNode: document.querySelector('#jitsi-frame'),
-    userInfo: { displayName: currentUsername },
-    configOverwrite: {
-      startWithAudioMuted: false,
-      startWithVideoMuted: !withVideo,
-      disableInviteFunctions: true
-    },
-    interfaceConfigOverwrite: {
-      TOOLBAR_BUTTONS: ['microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen', 'fodeviceselection', 'hangup', 'chat', 'settings']
-    }
-  };
-
-  if(activeJitsiApi) {
-    activeJitsiApi.dispose();
-  }
-  activeJitsiApi = new JitsiMeetExternalAPI(domain, options);
-  
-  activeJitsiApi.addEventListeners({
-    videoConferenceLeft: () => {
-      ringingTone.pause(); ringingTone.currentTime = 0;
-      document.getElementById('jitsi-container').style.display = 'none';
-      if(activeJitsiApi){
-        activeJitsiApi.dispose();
-        activeJitsiApi = null;
-      }
-    },
-    readyToClose: () => {
-      ringingTone.pause(); ringingTone.currentTime = 0;
-      document.getElementById('jitsi-container').style.display = 'none';
-      if(activeJitsiApi){
-        activeJitsiApi.dispose();
-        activeJitsiApi = null;
-      }
-    }
-  });
-}
-
-document.getElementById('videoCallBtn').onclick = () => { if(currentReceiver) startCall(true); };
-document.getElementById('audioCallBtn').onclick = () => { if(currentReceiver) startCall(false); };
-document.getElementById('acceptCallBtn').onclick = acceptCall;
-document.getElementById('declineCallBtn').onclick = declineCall;
+document.getElementById('videoCallBtn').onclick = () => { if(currentReceiver) sendCallLink(true); };
+document.getElementById('audioCallBtn').onclick = () => { if(currentReceiver) sendCallLink(false); };
 </script>
 </body>
 </html>
