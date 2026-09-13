@@ -3,949 +3,4156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Message App - WebRTC Clean Edition</title>
+
+<title>Message App</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Jitsi Meet -->
+<script src="https://meet.jit.si/external_api.js"></script>
+
 <style>
-  :root{
-    --app-bg: #0d1117;
-    --app-header: #161b22;
-    --app-surface: #161b22;
-    --app-panel: #21262d;
-    --app-primary: #3b82f6;
-    --app-primary-hover: #2563eb;
-    --app-light-primary: #1e3a8a;
-    --app-incoming: #21262d;
-    --app-text: #f0f6fc;
-    --app-muted: #8b949e;
-    --app-border: #30363d;
-    --app-danger: #f85149;
-  }
-  *{ box-sizing:border-box; margin:0; padding:0; user-select: none; }
-  html,body{ height:100%; overflow: hidden; }
-  body{
-    font-family:'Cairo', sans-serif;
-    background: #010409;
-    color: var(--app-text);
-    display:flex; justify-content:center; align-items:center;
-    min-height:100vh;
-  }
+
+:root{
+  --app-bg:#0d1117;
+  --app-header:#161b22;
+  --app-surface:#161b22;
+  --app-panel:#21262d;
+  --app-primary:#3b82f6;
+  --app-primary-hover:#2563eb;
+  --app-light-primary:#1e3a8a;
+  --app-incoming:#21262d;
+  --app-text:#f0f6fc;
+  --app-muted:#8b949e;
+  --app-border:#30363d;
+  --app-danger:#f85149;
+  --app-success:#238636;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  user-select:none;
+}
+
+html,
+body{
+  height:100%;
+  overflow:hidden;
+}
+
+body{
+  font-family:'Cairo',sans-serif;
+  background:#010409;
+  color:var(--app-text);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+}
+
+.shell{
+  width:100%;
+  max-width:480px;
+  height:100vh;
+  max-height:920px;
+  background:var(--app-bg);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:relative;
+}
+
+@media(min-width:550px){
   .shell{
-    width:100%; max-width:480px; height:100vh; max-height:920px;
-    background: var(--app-bg);
-    display:flex; flex-direction:column;
-    overflow:hidden;
-    position:relative;
+    border-radius:20px;
+    height:94vh;
+    box-shadow:0 25px 50px rgba(0,0,0,.8);
+    border:1px solid var(--app-border);
   }
-  @media (min-width:550px){
-    .shell{ border-radius:20px; height:94vh; box-shadow:0 25px 50px rgba(0,0,0,.8); border:1px solid var(--app-border); }
-  }
-  .screen{ display:none; flex-direction:column; height:100%; }
-  .screen.active{ display:flex; }
+}
 
-  /* ---------- AUTH SCREEN ---------- */
-  .auth-wrap{
-    flex:1; display:flex; flex-direction:column; justify-content:center;
-    padding: 32px 28px; overflow-y:auto;
-    background: radial-gradient(circle at top right, #1e3a8a 0%, #0d1117 60%);
-    position: relative;
-  }
-  .auth-header-card { text-align: center; margin-bottom: 28px; }
-  .auth-brand-icon {
-    width: 72px; height: 72px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    border-radius: 22px; display: inline-flex; align-items: center; justify-content: center;
-    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); margin-bottom: 16px;
-  }
-  .auth-brand-icon svg{ width: 40px; height: 40px; fill: #fff; }
-  .auth-wrap h1{ font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 6px; }
-  .auth-wrap p.sub{ color: var(--app-muted); font-size: 14.5px; font-weight: 500; }
-  .brand-title-blue { color: #60a5fa; font-weight: 900; }
+.screen{
+  display:none;
+  flex-direction:column;
+  height:100%;
+}
 
-  .auth-tabs{
-    display:flex; width:100%; margin-bottom: 24px;
-    background: rgba(33, 38, 45, 0.7); backdrop-filter: blur(10px);
-    border-radius: 14px; padding: 5px; border: 1px solid rgba(255,255,255,0.05);
-  }
-  .auth-tab{
-    flex:1; padding: 12px; background: transparent; border: none; border-radius: 10px;
-    cursor: pointer; font-family: inherit; font-weight: 700; font-size: 14.5px; color: var(--app-muted);
-    transition: all 0.3s;
-  }
-  .auth-tab.active{
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+.screen.active{
+  display:flex;
+}
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+.auth-wrap{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:32px 28px;
+  overflow-y:auto;
+  background:
+    radial-gradient(
+      circle at top right,
+      #1e3a8a 0%,
+      #0d1117 60%
+    );
+  position:relative;
+}
+
+.auth-header-card{
+  text-align:center;
+  margin-bottom:28px;
+}
+
+.auth-brand-icon{
+  width:72px;
+  height:72px;
+  background:
+    linear-gradient(
+      135deg,
+      #3b82f6 0%,
+      #1d4ed8 100%
+    );
+  border-radius:22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:
+    0 10px 25px rgba(59,130,246,.4);
+  margin-bottom:16px;
+}
+
+.auth-brand-icon svg{
+  width:40px;
+  height:40px;
+  fill:#fff;
+}
+
+.auth-wrap h1{
+  font-size:28px;
+  font-weight:900;
+  color:#fff;
+  margin-bottom:6px;
+}
+
+.auth-wrap p.sub{
+  color:var(--app-muted);
+  font-size:14.5px;
+  font-weight:500;
+}
+
+.brand-title-blue{
+  color:#60a5fa;
+  font-weight:900;
+}
+
+.auth-tabs{
+  display:flex;
+  width:100%;
+  margin-bottom:24px;
+  background:rgba(33,38,45,.7);
+  backdrop-filter:blur(10px);
+  border-radius:14px;
+  padding:5px;
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.auth-tab{
+  flex:1;
+  padding:12px;
+  background:transparent;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-family:inherit;
+  font-weight:700;
+  font-size:14.5px;
+  color:var(--app-muted);
+  transition:.3s;
+}
+
+.auth-tab.active{
+  background:
+    linear-gradient(
+      135deg,
+      #3b82f6 0%,
+      #2563eb 100%
+    );
+  color:#fff;
+  box-shadow:
+    0 4px 15px rgba(59,130,246,.4);
+}
+
+.field{
+  margin-bottom:18px;
+  position:relative;
+}
+
+.field label{
+  display:block;
+  font-size:13px;
+  color:var(--app-muted);
+  margin-bottom:6px;
+  font-weight:700;
+}
+
+.field input{
+  width:100%;
+  padding:16px 18px;
+  background:rgba(33,38,45,.8);
+  backdrop-filter:blur(5px);
+  border:1.5px solid var(--app-border);
+  border-radius:14px;
+  color:var(--app-text);
+  font-family:inherit;
+  font-size:15px;
+  outline:none;
+  transition:.3s;
+}
+
+.field input:focus{
+  border-color:var(--app-primary);
+  box-shadow:
+    0 0 0 4px rgba(59,130,246,.2);
+}
+
+.btn-primary{
+  width:100%;
+  padding:16px;
+  background:
+    linear-gradient(
+      135deg,
+      #3b82f6 0%,
+      #2563eb 100%
+    );
+  color:#fff;
+  border:none;
+  border-radius:14px;
+  font-family:inherit;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:8px;
+  box-shadow:
+    0 8px 25px rgba(59,130,246,.4);
+}
+
+.btn-primary:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.auth-hint{
+  text-align:center;
+  color:var(--app-muted);
+  font-size:13px;
+  margin-top:22px;
+  font-weight:500;
+}
+
+/* =========================================================
+   APP HEADER
+========================================================= */
+
+.app-top-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 16px;
+  background:var(--app-header);
+  border-bottom:1px solid var(--app-border);
+}
+
+.app-top-bar h1{
+  font-size:20px;
+  font-weight:800;
+  color:var(--app-text);
+}
+
+.app-top-actions{
+  display:flex;
+  gap:16px;
+  align-items:center;
+}
+
+.app-icon-btn{
+  background:none;
+  border:none;
+  color:var(--app-muted);
+  font-size:20px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.me-chip{
+  display:flex;
+  align-items:center;
+  padding:8px 16px;
+  font-size:13px;
+  color:var(--app-muted);
+  background:var(--app-bg);
+  border-bottom:1px solid var(--app-border);
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search-row{
+  display:flex;
+  gap:10px;
+  padding:10px 16px;
+  background:var(--app-bg);
+}
+
+.search-row input{
+  flex:1;
+  padding:10px 14px;
+  background:var(--app-panel);
+  border:1px solid var(--app-border);
+  border-radius:10px;
+  color:var(--app-text);
+  font-family:inherit;
+  font-size:14px;
+  outline:none;
+}
+
+.search-row button{
+  padding:0 18px;
+  background:var(--app-primary);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-family:inherit;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+}
+
+/* =========================================================
+   FRIENDS
+========================================================= */
+
+.friends-scroll{
+  flex:1;
+  overflow-y:auto;
+  background:var(--app-bg);
+}
+
+.friend-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px 16px;
+  cursor:pointer;
+  border-bottom:1px solid rgba(48,54,61,.5);
+}
+
+.friend-row:hover{
+  background:var(--app-panel);
+}
+
+.avatar{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:#30363d;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:17px;
+  color:#fff;
+  flex-shrink:0;
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.friend-meta{
+  flex:1;
+  min-width:0;
+}
+
+.friend-meta .name{
+  font-weight:600;
+  font-size:16px;
+  margin-bottom:3px;
+  color:var(--app-text);
+}
+
+.friend-meta .preview{
+  font-size:13.5px;
+  color:var(--app-muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.empty-note{
+  text-align:center;
+  color:var(--app-muted);
+  font-size:14px;
+  padding:80px 30px;
+  line-height:1.8;
+}
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+.settings-wrap{
+  flex:1;
+  overflow-y:auto;
+  padding:20px;
+  background:var(--app-bg);
+}
+
+.permission-box{
+  background:var(--app-panel);
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:20px;
+  border:1px solid var(--app-border);
+}
+
+.permission-box h4{
+  font-size:15px;
+  margin-bottom:8px;
+  color:var(--app-primary);
+}
+
+.permission-box p{
+  font-size:13px;
+  color:var(--app-muted);
+  margin-bottom:12px;
+  line-height:1.5;
+}
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+.chat-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 16px;
+  background:var(--app-header);
+  border-bottom:1px solid var(--app-border);
+}
+
+.chat-left-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.chat-top .avatar{
+  width:40px;
+  height:40px;
+  font-size:15px;
+}
+
+.chat-top .who h3{
+  font-size:16px;
+  font-weight:600;
+  color:var(--app-text);
+}
+
+.chat-top .who span{
+  font-size:12px;
+  color:var(--app-muted);
+}
+
+.chat-actions{
+  display:flex;
+  gap:18px;
+  align-items:center;
+}
+
+.back-icon{
+  background:none;
+  border:none;
+  color:var(--app-muted);
+  font-size:20px;
+  cursor:pointer;
+  padding:4px;
+  display:flex;
+  align-items:center;
+}
+
+.messages{
+  flex:1;
+  overflow-y:auto;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  background-color:#0d1117;
+  background-image:
+    radial-gradient(
+      rgba(255,255,255,.02) 1px,
+      transparent 0
+    );
+  background-size:24px 24px;
+}
+
+.bubble{
+  max-width:78%;
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:14.5px;
+  line-height:1.45;
+  word-wrap:break-word;
+  position:relative;
+}
+
+.bubble.me{
+  align-self:flex-start;
+  background:var(--app-light-primary);
+  border-top-right-radius:0;
+  color:#f0f6fc;
+  border:1px solid rgba(59,130,246,.3);
+}
+
+.bubble.them{
+  align-self:flex-end;
+  background:var(--app-incoming);
+  border-top-left-radius:0;
+  color:#f0f6fc;
+  border:1px solid var(--app-border);
+}
+
+.composer{
+  display:flex;
+  gap:8px;
+  padding:10px 16px;
+  background:var(--app-header);
+  align-items:center;
+  border-top:1px solid var(--app-border);
+}
+
+.composer input{
+  flex:1;
+  padding:11px 16px;
+  border-radius:10px;
+  background:var(--app-panel);
+  border:1px solid var(--app-border);
+  color:var(--app-text);
+  font-family:inherit;
+  font-size:14.5px;
+  outline:none;
+}
+
+.composer button{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:var(--app-primary);
+  color:#fff;
+  border:none;
+  font-size:18px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+
+.composer button.recording{
+  background:var(--app-danger);
+  animation:pulseRec 1.2s infinite;
+}
+
+@keyframes pulseRec{
+
+  0%{
+    transform:scale(1);
+    box-shadow:0 0 0 0 rgba(248,81,73,.7);
   }
 
-  .field{ margin-bottom: 18px; position: relative; }
-  .field label { display:block; font-size: 13px; color: var(--app-muted); margin-bottom: 6px; font-weight: 700; }
-  .field input{
-    width: 100%; padding: 16px 18px;
-    background: rgba(33, 38, 45, 0.8); backdrop-filter: blur(5px);
-    border: 1.5px solid var(--app-border); border-radius: 14px;
-    color: var(--app-text); font-family: inherit; font-size: 15px; outline: none;
-    transition: all 0.3s ease;
-  }
-  .field input:focus{ border-color: var(--app-primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
-
-  .btn-primary{
-    width: 100%; padding: 16px;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: #fff; border: none; border-radius: 14px;
-    font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
-    margin-top: 8px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-  }
-  .auth-hint{ text-align: center; color: var(--app-muted); font-size: 13px; margin-top: 22px; font-weight: 500; }
-
-  /* ---------- APP HEADER & CHATS LIST ---------- */
-  .app-top-bar{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--app-header); border-bottom: 1px solid var(--app-border); }
-  .app-top-bar h1{ font-size:20px; font-weight:800; color:var(--app-text); }
-  .app-top-actions{ display:flex; gap:16px; align-items:center; }
-  .app-icon-btn{ background:none; border:none; color:var(--app-muted); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-
-  .me-chip{ display:flex; align-items:center; padding:8px 16px; font-size:13px; color:var(--app-muted); background:var(--app-bg); border-bottom:1px solid var(--app-border); }
-
-  .search-row{ display:flex; gap:10px; padding:10px 16px; background:var(--app-bg); }
-  .search-row input{
-    flex:1; padding:10px 14px; background:var(--app-panel); border:1px solid var(--app-border);
-    border-radius:10px; color:var(--app-text); font-family:inherit; font-size:14px; outline:none;
-  }
-  .search-row button{
-    padding:0 18px; background:var(--app-primary); color:#fff; border:none; border-radius:10px;
-    font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;
+  70%{
+    transform:scale(1.08);
+    box-shadow:0 0 0 8px rgba(248,81,73,0);
   }
 
-  .friends-scroll{ flex:1; overflow-y:auto; background:var(--app-bg); }
-  .friend-row{ display:flex; align-items:center; gap:14px; padding:12px 16px; cursor:pointer; border-bottom:1px solid rgba(48,54,61,0.5); }
-  .friend-row:hover{ background:var(--app-panel); }
-  .avatar{
-    width:48px; height:48px; border-radius:50%; background:#30363d;
-    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; color:#fff; flex-shrink:0;
-    border: 1px solid rgba(255,255,255,0.05);
-  }
-  .friend-meta{ flex:1; min-width:0; }
-  .friend-meta .name{ font-weight:600; font-size:16px; margin-bottom:3px; color:var(--app-text); }
-  .friend-meta .preview{ font-size:13.5px; color:var(--app-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .empty-note{ text-align:center; color:var(--app-muted); font-size:14px; padding:80px 30px; line-height:1.8; }
-
-  /* ---------- SETTINGS SCREEN ---------- */
-  .settings-wrap{ flex:1; overflow-y:auto; padding:20px; background:var(--app-bg); }
-  .permission-box{ background:var(--app-panel); border-radius:12px; padding:16px; margin-bottom:20px; border:1px solid var(--app-border); }
-  .permission-box h4{ font-size:15px; margin-bottom:8px; color:var(--app-primary); }
-  .permission-box p{ font-size:13px; color:var(--app-muted); margin-bottom:12px; line-height:1.5; }
-
-  /* ---------- CHAT SCREEN ---------- */
-  .chat-top{ display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:var(--app-header); border-bottom:1px solid var(--app-border); }
-  .chat-left-info{ display:flex; align-items:center; gap:10px; }
-  .chat-top .avatar{ width:40px; height:40px; font-size:15px; }
-  .chat-top .who h3{ font-size:16px; font-weight:600; color:var(--app-text); }
-  .chat-top .who span{ font-size:12px; color:var(--app-muted); }
-  .chat-actions{ display:flex; gap:18px; align-items:center; }
-  .back-icon{ background:none; border:none; color:var(--app-muted); font-size:20px; cursor:pointer; padding:4px; display:flex; align-items:center; }
-
-  .messages{ 
-    flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:8px; 
-    background-color: #0d1117;
-    background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 0);
-    background-size: 24px 24px;
-  }
-  .bubble{ max-width:78%; padding:10px 14px; border-radius:12px; font-size:14.5px; line-height:1.45; word-wrap:break-word; position:relative; }
-  .bubble.me{ align-self:flex-start; background: var(--app-light-primary); border-top-right-radius:0; color:#f0f6fc; border: 1px solid rgba(59, 130, 246, 0.3); }
-  .bubble.them{ align-self:flex-end; background:var(--app-incoming); border-top-left-radius:0; color:#f0f6fc; border: 1px solid var(--app-border); }
-  
-  .composer{ display:flex; gap:8px; padding:10px 16px; background:var(--app-header); align-items:center; border-top: 1px solid var(--app-border); }
-  .composer input{
-    flex:1; padding:11px 16px; border-radius:10px; background:var(--app-panel);
-    border:1px solid var(--app-border); color:var(--app-text); font-family:inherit; font-size:14.5px; outline:none;
-  }
-  .composer button{
-    width:42px; height:42px; border-radius:50%; background:var(--app-primary);
-    color:#fff; border:none; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
-  }
-  .composer button.recording {
-    background: var(--app-danger);
-    animation: pulseRec 1.2s infinite;
-  }
-  @keyframes pulseRec {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.7); }
-    70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(248, 81, 73, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }
+  100%{
+    transform:scale(1);
+    box-shadow:0 0 0 0 rgba(248,81,73,0);
   }
 
-  audio.voice-player { width: 200px; height: 36px; accent-color: var(--app-primary); }
+}
 
-  /* ---------- WEBRTC CALL CONTAINER ---------- */
-  #webrtc-container {
-    display: none; position: absolute; inset: 0; background: #000; z-index: 200;
-    flex-direction: column; justify-content: space-between; padding: 20px;
-  }
-  .video-grid {
-    flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center; align-items: center; position: relative;
-  }
-  #remoteVideo {
-    width: 100%; height: 100%; object-fit: cover; border-radius: 12px; background: #161b22;
-  }
-  #localVideo {
-    position: absolute; bottom: 20px; right: 20px; width: 100px; height: 150px; object-fit: cover; border-radius: 10px; border: 2px solid var(--app-primary); background: #000;
-  }
-  .webrtc-controls {
-    display: flex; justify-content: center; gap: 20px; padding: 10px;
-  }
-  .webrtc-btn {
-    width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff;
-  }
-  .webrtc-btn.hangup { background: var(--app-danger); }
-  .webrtc-btn.mute { background: var(--app-panel); border: 1px solid var(--app-border); }
+audio.voice-player{
+  width:200px;
+  height:36px;
+  accent-color:var(--app-primary);
+}
 
-  /* ---------- INCOMING CALL MODAL ---------- */
-  #incomingCall{
-    display:none; position:absolute; inset:0; background:rgba(1,4,9,0.96);
-    z-index:150; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:30px;
+/* =========================================================
+   JITSI CALL SCREEN
+========================================================= */
+
+#jitsi-container{
+  display:none;
+  position:absolute;
+  inset:0;
+  z-index:200;
+  background:#000;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+#jitsi-container.active{
+  display:flex;
+}
+
+.jitsi-header{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:70px;
+  z-index:300;
+
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+
+  padding:12px 14px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.9),
+      rgba(0,0,0,0)
+    );
+
+  color:#fff;
+
+  pointer-events:none;
+}
+
+#jitsiCallTitle{
+  font-size:15px;
+  font-weight:800;
+}
+
+#jitsiCallStatus{
+  font-size:11px;
+  color:#bbb;
+  margin-top:2px;
+}
+
+#jitsiCloseBtn{
+  pointer-events:auto;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(0,0,0,.6);
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+}
+
+#jitsiMeet{
+  flex:1;
+  width:100%;
+  height:100%;
+  min-height:0;
+  background:#000;
+}
+
+#jitsiMeet iframe{
+  width:100% !important;
+  height:100% !important;
+  border:0 !important;
+}
+
+.jitsi-controls{
+  position:absolute;
+  bottom:18px;
+  left:0;
+  right:0;
+  z-index:300;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+
+  pointer-events:none;
+}
+
+.jitsi-control-btn{
+  pointer-events:auto;
+
+  width:52px;
+  height:52px;
+
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.15);
+
+  background:rgba(33,38,45,.92);
+  color:#fff;
+
+  font-size:19px;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  box-shadow:0 5px 20px rgba(0,0,0,.4);
+}
+
+.jitsi-control-btn.disabled{
+  background:var(--app-danger);
+}
+
+.jitsi-control-btn.jitsi-hangup{
+  background:var(--app-danger);
+  width:58px;
+  height:58px;
+  font-size:21px;
+}
+
+/* =========================================================
+   INCOMING CALL
+========================================================= */
+
+#incomingCall{
+  display:none;
+  position:absolute;
+  inset:0;
+  background:rgba(1,4,9,.97);
+  z-index:400;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+  padding:30px;
+}
+
+#incomingCall.active{
+  display:flex;
+}
+
+#incomingCall .avatar{
+  width:100px;
+  height:100px;
+  font-size:36px;
+  background:#21262d;
+}
+
+#incomingCall h3{
+  font-size:22px;
+  font-weight:700;
+  color:var(--app-text);
+}
+
+#incomingCall p{
+  color:var(--app-muted);
+  font-size:14px;
+}
+
+.incoming-actions{
+  display:flex;
+  gap:40px;
+  margin-top:20px;
+}
+
+.call-btn{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  border:none;
+  font-size:22px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.call-btn.end{
+  background:var(--app-danger);
+  color:#fff;
+}
+
+.call-btn.accept{
+  background:var(--app-success);
+  color:#fff;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:550px){
+
+  #jitsi-container{
+    position:fixed;
   }
-  #incomingCall.active{ display:flex; }
-  #incomingCall .avatar{ width:100px; height:100px; font-size:36px; background:#21262d; }
-  #incomingCall h3{ font-size:22px; font-weight:700; color:var(--app-text); }
-  #incomingCall p{ color:var(--app-muted); font-size:14px; }
-  .incoming-actions{ display:flex; gap:40px; margin-top:20px; }
-  .call-btn{ width:60px; height:60px; border-radius:50%; border:none; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .call-btn.end{ background:var(--app-danger); color:#fff; }
-  .call-btn.accept{ background:#238636; color:#fff; }
+
+}
+
 </style>
 </head>
+
 <body>
 
 <div class="shell">
 
-  <!-- AUTH SCREEN -->
+  <!-- =====================================================
+       AUTH
+  ====================================================== -->
+
   <div id="screen-auth" class="screen active">
+
     <div class="auth-wrap">
+
       <div class="auth-header-card">
+
         <div class="auth-brand-icon">
-          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+
+          <svg viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+          </svg>
+
         </div>
-        <h1>أهلاً بك في <span class="brand-title-blue">Message App</span></h1>
-        <p class="sub">منصة التراسل الفوري الذكية</p>
+
+        <h1>
+          أهلاً بك في
+          <span class="brand-title-blue">
+            Message App
+          </span>
+        </h1>
+
+        <p class="sub">
+          منصة التراسل الفوري الذكية
+        </p>
+
       </div>
+
 
       <div class="auth-tabs">
-        <button class="auth-tab active" id="tabLogin" onclick="switchAuthMode('login')">تسجيل دخول</button>
-        <button class="auth-tab" id="tabSignup" onclick="switchAuthMode('signup')">حساب جديد</button>
+
+        <button
+          class="auth-tab active"
+          id="tabLogin"
+          onclick="switchAuthMode('login')">
+
+          تسجيل دخول
+
+        </button>
+
+        <button
+          class="auth-tab"
+          id="tabSignup"
+          onclick="switchAuthMode('signup')">
+
+          حساب جديد
+
+        </button>
+
       </div>
 
+
       <div class="field">
-        <label>اسم المستخدم</label>
-        <input id="usernameInput" type="text" placeholder="أدخل اسمك هنا...">
-      </div>
-      <div class="field">
-        <label>كلمة المرور</label>
-        <input id="passwordInput" type="password" placeholder="••••••••">
+
+        <label>
+          اسم المستخدم
+        </label>
+
+        <input
+          id="usernameInput"
+          type="text"
+          placeholder="أدخل اسمك هنا..."
+          autocomplete="username">
+
       </div>
 
-      <button class="btn-primary" id="authBtn">متابعة</button>
-      <div class="auth-hint">بياناتك آمنة ومشفرة بالكامل 🔒</div>
+
+      <div class="field">
+
+        <label>
+          كلمة المرور
+        </label>
+
+        <input
+          id="passwordInput"
+          type="password"
+          placeholder="••••••••"
+          autocomplete="current-password">
+
+      </div>
+
+
+      <button
+        class="btn-primary"
+        id="authBtn">
+
+        متابعة
+
+      </button>
+
+
+      <div class="auth-hint">
+        بياناتك آمنة ومشفرة بالكامل 🔒
+      </div>
+
     </div>
+
   </div>
 
-  <!-- FRIENDS LIST -->
+
+  <!-- =====================================================
+       FRIENDS
+  ====================================================== -->
+
   <div id="screen-friends" class="screen">
+
     <div class="app-top-bar">
-      <h1><span class="brand-title-blue">Message App</span></h1>
+
+      <h1>
+        <span class="brand-title-blue">
+          Message App
+        </span>
+      </h1>
+
       <div class="app-top-actions">
-        <button class="app-icon-btn" id="settingsNavBtn" title="الإعدادات">⚙️</button>
-        <button class="app-icon-btn" id="logoutBtn" title="خروج">⏻</button>
+
+        <button
+          class="app-icon-btn"
+          id="settingsNavBtn"
+          title="الإعدادات">
+
+          ⚙️
+
+        </button>
+
+        <button
+          class="app-icon-btn"
+          id="logoutBtn"
+          title="خروج">
+
+          ⏻
+
+        </button>
+
       </div>
+
     </div>
+
+
     <div class="me-chip">
-      <span>الحساب: <b id="meName" style="color:var(--app-text)"></b></span>
+
+      <span>
+        الحساب:
+        <b
+          id="meName"
+          style="color:var(--app-text)">
+        </b>
+      </span>
+
     </div>
+
+
     <div class="search-row">
-      <input id="newFriendInput" type="text" placeholder="بحث أو بدء محادثة جديدة...">
-      <button id="startChatBtn">إضافة</button>
+
+      <input
+        id="newFriendInput"
+        type="text"
+        placeholder="بحث أو بدء محادثة جديدة...">
+
+      <button id="startChatBtn">
+        إضافة
+      </button>
+
     </div>
-    <div class="friends-scroll" id="friendsScroll">
-      <div class="empty-note">لا توجد محادثات حالياً.<br>أدخل اسم صديقك في الأعلى لبدء الدردشة.</div>
+
+
+    <div
+      class="friends-scroll"
+      id="friendsScroll">
+
+      <div class="empty-note">
+
+        لا توجد محادثات حالياً.
+        <br>
+
+        أدخل اسم صديقك في الأعلى لبدء الدردشة.
+
+      </div>
+
     </div>
+
   </div>
 
-  <!-- SETTINGS SCREEN -->
+
+  <!-- =====================================================
+       SETTINGS
+  ====================================================== -->
+
   <div id="screen-settings" class="screen">
+
     <div class="app-top-bar">
+
       <div class="chat-left-info">
-        <button class="back-icon" id="settingsBackBtn">✕</button>
-        <h1 style="font-size:18px;">الإعدادات والحساب</h1>
+
+        <button
+          class="back-icon"
+          id="settingsBackBtn">
+
+          ✕
+
+        </button>
+
+        <h1 style="font-size:18px;">
+          الإعدادات والحساب
+        </h1>
+
       </div>
+
     </div>
+
+
     <div class="settings-wrap">
+
       <div class="permission-box">
-        <h4>أذونات الإشعارات والكاميرا والمايكروفون</h4>
-        <p>لتفعيل المكالمات بشكل سليم في التطبيق، اضغط هنا للسماح بالأذونات:</p>
-        <button class="btn-primary" id="requestPermissionsBtn" style="margin-top:0;">منح الأذونات الشاملة 🔔📷🎙️</button>
+
+        <h4>
+          أذونات الإشعارات والكاميرا والمايكروفون
+        </h4>
+
+        <p>
+          لتفعيل المكالمات بشكل سليم في التطبيق،
+          اضغط هنا للسماح بالأذونات.
+        </p>
+
+        <button
+          class="btn-primary"
+          id="requestPermissionsBtn"
+          style="margin-top:0;">
+
+          منح الأذونات 🔔📷🎙️
+
+        </button>
+
       </div>
 
-      <div style="background:var(--app-panel); border-radius:12px; padding:16px; border: 1px solid var(--app-border);">
-        <h4 style="margin-bottom:14px; font-size:15px; color:var(--app-text);">تعديل بيانات الحساب</h4>
-        <div class="field" style="margin-bottom:12px;">
-          <label>اسم المستخدم الجديد</label>
-          <input id="editUsernameInput" type="text" style="padding:12px 14px;">
+
+      <div
+        style="
+          background:var(--app-panel);
+          border-radius:12px;
+          padding:16px;
+          border:1px solid var(--app-border);
+        ">
+
+        <h4
+          style="
+            margin-bottom:14px;
+            font-size:15px;
+            color:var(--app-text);
+          ">
+
+          تعديل بيانات الحساب
+
+        </h4>
+
+
+        <div
+          class="field"
+          style="margin-bottom:12px;">
+
+          <label>
+            اسم المستخدم الجديد
+          </label>
+
+          <input
+            id="editUsernameInput"
+            type="text"
+            style="padding:12px 14px;">
+
         </div>
-        <div class="field" style="margin-bottom:16px;">
-          <label>كلمة المرور الجديدة</label>
-          <input id="editPasswordInput" type="password" placeholder="اتركها فارغة إذا لم ترد التغيير" style="padding:12px 14px;">
+
+
+        <div
+          class="field"
+          style="margin-bottom:16px;">
+
+          <label>
+            كلمة المرور الجديدة
+          </label>
+
+          <input
+            id="editPasswordInput"
+            type="password"
+            placeholder="اتركها فارغة إذا لم ترد التغيير"
+            style="padding:12px 14px;">
+
         </div>
-        <button class="btn-primary" id="saveProfileBtn">حفظ التعديلات</button>
+
+
+        <button
+          class="btn-primary"
+          id="saveProfileBtn">
+
+          حفظ التعديلات
+
+        </button>
+
       </div>
+
     </div>
+
   </div>
 
-  <!-- CHAT SCREEN -->
+
+  <!-- =====================================================
+       CHAT
+  ====================================================== -->
+
   <div id="screen-chat" class="screen">
+
     <div class="chat-top">
+
       <div class="chat-left-info">
-        <button class="back-icon" id="backBtn">←</button>
-        <div class="avatar" id="chatAvatar">?</div>
-        <div class="who">
-          <h3 id="chatName"></h3>
-          <span>متصل الآن</span>
+
+        <button
+          class="back-icon"
+          id="backBtn">
+
+          ←
+
+        </button>
+
+        <div
+          class="avatar"
+          id="chatAvatar">
+
+          ?
+
         </div>
+
+        <div class="who">
+
+          <h3 id="chatName"></h3>
+
+          <span>
+            متصل الآن
+          </span>
+
+        </div>
+
       </div>
+
+
       <div class="chat-actions">
-        <button class="app-icon-btn" id="videoCallBtn" title="مكالمة فيديو">📹</button>
-        <button class="app-icon-btn" id="audioCallBtn" title="مكالمة صوتية">📞</button>
+
+        <button
+          class="app-icon-btn"
+          id="videoCallBtn"
+          title="مكالمة فيديو">
+
+          📹
+
+        </button>
+
+        <button
+          class="app-icon-btn"
+          id="audioCallBtn"
+          title="مكالمة صوتية">
+
+          📞
+
+        </button>
+
       </div>
+
     </div>
 
-    <div class="messages" id="messagesEl"></div>
+
+    <div
+      class="messages"
+      id="messagesEl">
+    </div>
+
+
     <div class="composer">
-      <input id="msgInput" type="text" placeholder="اكتب رسالة...">
-      <button id="sendBtn" title="إرسال نص">➤</button>
-      <button id="voiceBtn" title="تسجيل صوتي">🎙️</button>
+
+      <input
+        id="msgInput"
+        type="text"
+        placeholder="اكتب رسالة...">
+
+      <button
+        id="sendBtn"
+        title="إرسال نص">
+
+        ➤
+
+      </button>
+
+      <button
+        id="voiceBtn"
+        title="تسجيل صوتي">
+
+        🎙️
+
+      </button>
+
     </div>
+
   </div>
 
-  <!-- WEBRTC CALL SCREEN -->
-  <div id="webrtc-container">
-    <div id="callStatusLabel" style="position:absolute; top:60px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.55); color:#fff; font-size:13px; font-weight:700; padding:6px 14px; border-radius:20px; z-index:210;">جاري الاتصال...</div>
-    <div id="debugPanel" style="position:absolute; top:100px; left:10px; right:10px; max-height:220px; overflow-y:auto; background:rgba(0,0,0,0.75); color:#0f0; font-size:11px; font-family:monospace; padding:8px; border-radius:8px; z-index:210; direction:ltr; text-align:left;"></div>
-    <div class="video-grid">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <video id="localVideo" autoplay playsinline muted></video>
+
+  <!-- =====================================================
+       JITSI CALL
+  ====================================================== -->
+
+  <div id="jitsi-container">
+
+    <div class="jitsi-header">
+
+      <div>
+
+        <div id="jitsiCallTitle">
+          المكالمة
+        </div>
+
+        <div id="jitsiCallStatus">
+          جاري الاتصال...
+        </div>
+
+      </div>
+
+
+      <button
+        id="jitsiCloseBtn"
+        title="إنهاء المكالمة">
+
+        ✕
+
+      </button>
+
     </div>
-    <div class="webrtc-controls">
-      <button class="webrtc-btn mute" id="toggleMuteBtn" title="كتم الصوت">🎤</button>
-      <button class="webrtc-btn mute" id="toggleVideoBtn" title="إيقاف الكاميرا">📹</button>
-      <button class="webrtc-btn hangup" id="endCallBtn" title="إنهاء المكالمة">✕</button>
+
+
+    <div id="jitsiMeet"></div>
+
+
+    <div class="jitsi-controls">
+
+      <button
+        class="jitsi-control-btn"
+        id="jitsiMuteBtn"
+        title="كتم الصوت">
+
+        🎤
+
+      </button>
+
+
+      <button
+        class="jitsi-control-btn"
+        id="jitsiVideoBtn"
+        title="الكاميرا">
+
+        📹
+
+      </button>
+
+
+      <button
+        class="jitsi-control-btn jitsi-hangup"
+        id="jitsiHangupBtn"
+        title="إنهاء المكالمة">
+
+        ✕
+
+      </button>
+
     </div>
+
   </div>
 
-  <!-- INCOMING CALL MODAL -->
+
+  <!-- =====================================================
+       INCOMING CALL
+  ====================================================== -->
+
   <div id="incomingCall">
-    <div class="avatar" id="incomingAvatar">?</div>
-    <h3 id="incomingName"></h3>
-    <p id="incomingType">مكالمة واردة...</p>
-    <div class="incoming-actions">
-      <button class="call-btn end" id="declineCallBtn">✕</button>
-      <button class="call-btn accept" id="acceptCallBtn">📞</button>
+
+    <div
+      class="avatar"
+      id="incomingAvatar">
+
+      ?
+
     </div>
+
+
+    <h3 id="incomingName"></h3>
+
+
+    <p id="incomingType">
+      مكالمة واردة...
+    </p>
+
+
+    <div class="incoming-actions">
+
+      <button
+        class="call-btn end"
+        id="declineCallBtn">
+
+        ✕
+        
+      </button>
+
+
+      <button
+        class="call-btn accept"
+        id="acceptCallBtn">
+
+        📞
+
+      </button>
+
+    </div>
+
   </div>
 
 </div>
 
-<script>
-const SUPABASE_URL = 'https://roqpinipcgwqeqqfpcjm.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// يلتقط أي خطأ برمجي ويعرضه لك مباشرة على الشاشة (بدون الحاجة لتوصيل الجوال بكمبيوتر)
-window.onerror = function(message, source, lineno, colno, error){
-  alert('⚠️ خطأ برمجي:\n' + message + '\n(سطر ' + lineno + ')');
-  return false;
-};
-window.addEventListener('unhandledrejection', function(event){
-  alert('⚠️ خطأ (Promise):\n' + (event.reason && event.reason.message ? event.reason.message : event.reason));
-});
+<script>
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+  'https://roqpinipcgwqeqqfpcjm.supabase.co';
+
+const SUPABASE_KEY =
+  'sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK';
+
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
 
 let currentUsername = '';
+
 let currentReceiver = '';
+
 let friends = [];
+
 let isSignUp = false;
+
 let myInboxChannel = null;
-let ringingTone = new Audio('https://actions.google.com/sounds/v1/telephones/telephone_ring_tone.ogg');
+
+let messageChannel = null;
+
+
+/* =========================================================
+   RINGTONE
+========================================================= */
+
+let ringingTone =
+  new Audio(
+    'https://actions.google.com/sounds/v1/telephones/telephone_ring_tone.ogg'
+  );
+
 ringingTone.loop = true;
 
-// WebRTC Variables
-let localStream = null;
-let remoteStream = null;
-let peerConnection = null;
+
+/*
+ * متغيرات Jitsi
+ */
+
+let jitsiApi = null;
+
 let activeCallWith = '';
+
+let activeJitsiRoom = '';
+
 let isVideoCallActive = true;
-let pendingCandidates = [];
-
-const rtcConfig = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    // TURN تجريبي مجاني (Open Relay) - يساعد لما شبكات الجوال تمنع الاتصال المباشر (STUN فقط ما يكفي غالباً).
-    // في بيئة إنتاج حقيقية يفضل تستخدم TURN خاص بك (coturn أو خدمة مدفوعة) بدل هذا.
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-  ]
-};
-
-window.addEventListener('click', function unlockRingtoneAudio(){
-  ringingTone.muted = true;
-  ringingTone.play().then(() => {
-    ringingTone.pause();
-    ringingTone.currentTime = 0;
-    ringingTone.muted = false;
-  }).catch(() => {});
-  window.removeEventListener('click', unlockRingtoneAudio);
-}, { once: true });
-
-window.addEventListener('DOMContentLoaded', () => {
-  const savedUser = localStorage.getItem('chat_current_user');
-  if (savedUser) {
-    currentUsername = savedUser;
-    document.getElementById('meName').innerText = currentUsername;
-    showScreen('screen-friends');
-    loadExistingChats();
-    subscribeToRealtime();
-    subscribeToCallSignaling();
-  }
-});
-
-async function requestNotificationPermission() {
-  if (window.Notification && Notification.permission !== "granted") {
-    await Notification.requestPermission();
-  }
-}
-
-document.getElementById('requestPermissionsBtn').onclick = async () => {
-  try {
-    await requestNotificationPermission();
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    stream.getTracks().forEach(track => track.stop());
-    alert('تم منح أذونات الكاميرا والمايكروفون بنجاح!');
-  } catch (e) {
-    alert('خطأ في الأذونات: ' + e.message);
-  }
-};
-
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function initials(name){
-  return (name || '?').trim().charAt(0).toUpperCase();
-}
-
-function switchAuthMode(mode) {
-  isSignUp = (mode === 'signup');
-  const btn = document.getElementById('authBtn');
-  const tabLogin = document.getElementById('tabLogin');
-  const tabSignup = document.getElementById('tabSignup');
-
-  if (isSignUp) {
-    document.getElementById('screen-auth').querySelector('h1').innerHTML = 'حساب جديد في <span class="brand-title-blue">Message App</span>';
-    btn.innerText = 'إنشاء الحساب';
-    tabSignup.classList.add('active');
-    tabLogin.classList.remove('active');
-  } else {
-    document.getElementById('screen-auth').querySelector('h1').innerHTML = 'أهلاً بك في <span class="brand-title-blue">Message App</span>';
-    btn.innerText = 'متابعة';
-    tabLogin.classList.add('active');
-    tabSignup.classList.remove('active');
-  }
-}
-
-document.getElementById('authBtn').onclick = async () => {
-  const username = document.getElementById('usernameInput').value.trim();
-  const password = document.getElementById('passwordInput').value.trim();
-
-  if (!username || !password) {
-    alert('الرجاء إدخال اسم المستخدم وكلمة المرور');
-    return;
-  }
-
-  requestNotificationPermission();
-
-  if (isSignUp) {
-    const { data: existing } = await supabaseClient
-      .from('profiles').select('username').eq('username', username).single();
-
-    if (existing) {
-      alert('اسم المستخدم موجود مسبقاً.');
-      return;
-    }
-
-    const { error } = await supabaseClient.from('profiles').insert([{ username, password }]);
-    if (error) { alert('خطأ: ' + error.message); return; }
-    loginSuccess(username);
-  } else {
-    const { data, error } = await supabaseClient
-      .from('profiles').select('*').eq('username', username).eq('password', password).single();
-
-    if (error || !data) {
-      alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
-      return;
-    }
-    loginSuccess(username);
-  }
-};
-
-function loginSuccess(username) {
-  currentUsername = username;
-  localStorage.setItem('chat_current_user', username);
-  document.getElementById('meName').innerText = currentUsername;
-  showScreen('screen-friends');
-  loadExistingChats();
-  subscribeToRealtime();
-  subscribeToCallSignaling();
-}
-
-document.getElementById('logoutBtn').onclick = () => {
-  localStorage.removeItem('chat_current_user');
-  currentUsername = '';
-  friends = [];
-  showScreen('screen-auth');
-};
-
-document.getElementById('settingsNavBtn').onclick = () => {
-  document.getElementById('editUsernameInput').value = currentUsername;
-  document.getElementById('editPasswordInput').value = '';
-  showScreen('screen-settings');
-};
-
-document.getElementById('settingsBackBtn').onclick = () => showScreen('screen-friends');
-
-document.getElementById('saveProfileBtn').onclick = async () => {
-  const newName = document.getElementById('editUsernameInput').value.trim();
-  const newPass = document.getElementById('editPasswordInput').value.trim();
-  if (!newName) { alert('اسم المستخدم مطلوب'); return; }
-
-  const updateData = { username: newName };
-  if (newPass) updateData.password = newPass;
-
-  const { error } = await supabaseClient.from('profiles').update(updateData).eq('username', currentUsername);
-  if (error) { alert('خطأ: ' + error.message); return; }
-
-  currentUsername = newName;
-  localStorage.setItem('chat_current_user', currentUsername);
-  document.getElementById('meName').innerText = currentUsername;
-  alert('تم الحفظ بنجاح!');
-  showScreen('screen-friends');
-};
-
-document.getElementById('startChatBtn').onclick = () => {
-  const name = document.getElementById('newFriendInput').value.trim();
-  if(!name || name === currentUsername){ alert('الرجاء إدخال اسم صحيح'); return; }
-  if(!friends.includes(name)) friends.push(name);
-  document.getElementById('newFriendInput').value = '';
-  openChat(name);
-};
-
-async function loadExistingChats(){
-  const { data, error } = await supabaseClient
-    .from('message').select('sender, receiver').or(`sender.eq.${currentUsername},receiver.eq.${currentUsername}`);
-
-  if(!error && data){
-    data.forEach(m => {
-      const other = m.sender === currentUsername ? m.receiver : m.sender;
-      if(other && !friends.includes(other)) friends.push(other);
-    });
-    renderFriends();
-  }
-}
-
-function renderFriends(){
-  const el = document.getElementById('friendsScroll');
-  el.innerHTML = '';
-  if(friends.length === 0){
-    el.innerHTML = '<div class="empty-note">لا توجد محادثات حالياً.<br>أدخل اسم صديقك في الأعلى لبدء الدردشة.</div>';
-    return;
-  }
-  friends.forEach(f => {
-    const row = document.createElement('div');
-    row.className = 'friend-row';
-    row.innerHTML = `<div class="avatar">${initials(f)}</div><div class="friend-meta"><div class="name">${f}</div><div class="preview">انقر لفتح المحادثة</div></div>`;
-    row.onclick = () => openChat(f);
-    el.appendChild(row);
-  });
-}
-
-function openChat(friend){
-  currentReceiver = friend;
-  document.getElementById('chatName').innerText = friend;
-  document.getElementById('chatAvatar').innerText = initials(friend);
-  showScreen('screen-chat');
-  loadMessages();
-}
-
-document.getElementById('backBtn').onclick = () => {
-  currentReceiver = '';
-  showScreen('screen-friends');
-  loadExistingChats();
-};
-
-async function sendMessage(textToSend = null, audioUrlToSend = null){
-  const input = document.getElementById('msgInput');
-  const text = textToSend !== null ? textToSend : input.value.trim();
-  if(!text && !audioUrlToSend) return;
-  if(textToSend === null) input.value = '';
-
-  const payload = { sender: currentUsername, receiver: currentReceiver, text: text || '', audio_url: audioUrlToSend || null };
-  await supabaseClient.from('message').insert([payload]);
-}
-
-document.getElementById('sendBtn').onclick = () => sendMessage();
-document.getElementById('msgInput').addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
-
-/* Voice Message */
-let mediaRecorder = null;
-let audioChunks = [];
-let isRecording = false;
-
-document.getElementById('voiceBtn').onclick = async () => {
-  const btn = document.getElementById('voiceBtn');
-  if (!isRecording) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => { await sendMessage('🎤 [مقطع صوتي]', reader.result); };
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mediaRecorder.start();
-      isRecording = true;
-      btn.classList.add('recording');
-    } catch (e) {
-      alert('تعذر الوصول للمايكروفون: ' + e.message);
-    }
-  } else {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-    isRecording = false;
-    btn.classList.remove('recording');
-  }
-};
-
-async function loadMessages(){
-  const { data, error } = await supabaseClient
-    .from('message').select('*')
-    .or(`and(sender.eq.${currentUsername},receiver.eq.${currentReceiver}),and(sender.eq.${currentReceiver},receiver.eq.${currentUsername})`)
-    .order('created_at', { ascending: true });
-
-  const box = document.getElementById('messagesEl');
-  box.innerHTML = '';
-  if(!error && data) data.forEach(appendMessage);
-}
-
-function appendMessage(msg){
-  const relevant = (msg.sender === currentUsername && msg.receiver === currentReceiver) || (msg.sender === currentReceiver && msg.receiver === currentUsername);
-  if(!relevant) return;
-
-  const box = document.getElementById('messagesEl');
-  const div = document.createElement('div');
-  div.className = 'bubble ' + (msg.sender === currentUsername ? 'me' : 'them');
-
-  if(msg.audio_url){
-    div.innerHTML = `<div style="font-size:12px; margin-bottom:4px; opacity:0.8;">🎤 رسالة صوتية</div><audio controls class="voice-player" src="${msg.audio_url}"></audio>`;
-  } else {
-    div.innerText = msg.text;
-  }
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-
-function subscribeToRealtime(){
-  supabaseClient.channel('public:message')
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'message' }, payload => {
-      appendMessage(payload.new);
-    }).subscribe();
-}
-
-/* ================= WEBRTC SIGNALING & CALL LOGIC ================= */
-function subscribeToCallSignaling(){
-  if(myInboxChannel) supabaseClient.removeChannel(myInboxChannel);
-  myInboxChannel = supabaseClient.channel('calls-' + currentUsername);
-  myInboxChannel.on('broadcast', { event:'signal' }, ({ payload }) => handleIncomingSignal(payload)).subscribe();
-}
-
-function sendWebRTCSignal(toUser, data){
-  const ch = supabaseClient.channel('calls-' + toUser);
-  ch.subscribe(status => {
-    if(status === 'SUBSCRIBED'){
-      ch.send({ type:'broadcast', event:'signal', payload:{ ...data, from: currentUsername } });
-      showDebugToast('📤 أرسلت: ' + data.kind + ' إلى ' + toUser);
-      setTimeout(() => supabaseClient.removeChannel(ch), 1000);
-    } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
-      showDebugToast('❌ فشل إرسال الإشارة إلى ' + toUser + ' (' + status + ')');
-    }
-  });
-}
 
 let incomingCaller = '';
+
 let incomingHasVideo = true;
 
-function showDebugToast(text){
-  logDebug(text);
-}
+let incomingJitsiRoom = '';
 
-function logDebug(text){
-  const panel = document.getElementById('debugPanel');
-  if(!panel) { console.log(text); return; }
-  const line = document.createElement('div');
-  const t = new Date().toLocaleTimeString('en-GB');
-  line.innerText = '[' + t + '] ' + text;
-  panel.appendChild(line);
-  panel.scrollTop = panel.scrollHeight;
-  console.log(text);
-}
+let isJitsiMuted = false;
 
-function handleIncomingSignal(payload){
-  showDebugToast('📥 وصلت إشارة: ' + payload.kind + (payload.from ? (' من ' + payload.from) : (payload.sdp ? ' (sdp)' : (payload.ice ? ' (ice)' : ''))));
-  if(payload.kind === 'call-offer'){
-    incomingCaller = payload.from;
-    incomingHasVideo = payload.hasVideo;
-    activeCallWith = incomingCaller;
+let isJitsiVideoOff = false;
 
-    ringingTone.play().catch(e => {});
+let isClosingJitsi = false;
 
-    document.getElementById('incomingAvatar').innerText = initials(incomingCaller);
-    document.getElementById('incomingName').innerText = incomingCaller;
-    document.getElementById('incomingType').innerText = incomingHasVideo ? 'مكالمة فيديو واردة...' : 'مكالمة صوتية واردة...';
-    document.getElementById('incomingCall').classList.add('active');
+
+/* =========================================================
+   ERROR HANDLING
+========================================================= */
+
+window.onerror =
+  function(message, source, lineno){
+
+    console.error(
+      'JavaScript Error:',
+      message,
+      source,
+      lineno
+    );
+
+    return false;
+  };
+
+
+window.addEventListener(
+  'unhandledrejection',
+  function(event){
+
+    console.error(
+      'Unhandled Promise:',
+      event.reason
+    );
+
   }
-  else if(payload.kind === 'call-decline'){
-    ringingTone.pause(); ringingTone.currentTime = 0;
-    document.getElementById('incomingCall').classList.remove('active');
-    alert('رفض الطرف الآخر المكالمة.');
-    cleanupCall();
-  }
-  else if(payload.kind === 'call-hangup'){
-    hangupCall(false);
-  }
-  else if(payload.kind === 'call-accept'){
-    // الطرف الآخر وافق على المكالمة الآن فقط ننشئ الـ offer الحقيقي
-    // (الفيديو المحلي وشاشة المكالمة ظاهرين عندنا من الأول، هذا بس يجهز اتصال WebRTC الفعلي)
-    logDebug('☎️ استلمت call-accept، سأنشئ peerConnection وoffer الآن');
-    ringingTone.pause(); ringingTone.currentTime = 0;
-    createPeerConnection(true);
-  }
-  else if(payload.sdp){
-    logDebug('📩 استلمت sdp نوع=' + payload.sdp.type + ' | peerConnection موجود=' + !!peerConnection);
-    if(!peerConnection){
-      logDebug('❌ تم تجاهل الـ sdp لأنه لا يوجد peerConnection بعد!');
-      return;
+);
+
+
+/* =========================================================
+   INITIALIZATION
+========================================================= */
+
+window.addEventListener(
+  'DOMContentLoaded',
+  async function(){
+
+    const savedUser =
+      localStorage.getItem(
+        'chat_current_user'
+      );
+
+    if(savedUser){
+
+      currentUsername = savedUser;
+
+      document.getElementById(
+        'meName'
+      ).innerText =
+        currentUsername;
+
+      showScreen(
+        'screen-friends'
+      );
+
+      await loadExistingChats();
+
+      subscribeToRealtime();
+
+      subscribeToCallSignaling();
+
     }
-    peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp)).then(() => {
-      logDebug('✅ تم ضبط remote description (' + payload.sdp.type + ')');
-      // بعد تعيين الوصف البعيد، طبّق أي مرشحات ICE كانت بالانتظار
-      logDebug('🧊 تطبيق ' + pendingCandidates.length + ' مرشح ICE مؤجل');
-      pendingCandidates.forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)).catch(e => logDebug('❌ خطأ addIceCandidate: ' + e.message)));
-      pendingCandidates = [];
-      if(payload.sdp.type === 'offer'){
-        peerConnection.createAnswer().then(answer => {
-          logDebug('📝 تم إنشاء answer، جاري الإرسال');
-          peerConnection.setLocalDescription(answer);
-          sendWebRTCSignal(activeCallWith, { sdp: answer });
-        }).catch(e => logDebug('❌ خطأ بإنشاء answer: ' + e.message));
+
+  }
+);
+
+
+/* =========================================================
+   AUDIO UNLOCK
+========================================================= */
+
+window.addEventListener(
+  'click',
+  function unlockRingtoneAudio(){
+
+    ringingTone.muted = true;
+
+    ringingTone
+      .play()
+      .then(() => {
+
+        ringingTone.pause();
+
+        ringingTone.currentTime = 0;
+
+        ringingTone.muted = false;
+
+      })
+      .catch(() => {});
+
+    window.removeEventListener(
+      'click',
+      unlockRingtoneAudio
+    );
+
+  },
+  {once:true}
+);
+
+
+/* =========================================================
+   SCREEN NAVIGATION
+========================================================= */
+
+function showScreen(id){
+
+  document
+    .querySelectorAll('.screen')
+    .forEach(screen => {
+
+      screen.classList.remove(
+        'active'
+      );
+
+    });
+
+  const target =
+    document.getElementById(id);
+
+  if(target){
+
+    target.classList.add(
+      'active'
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function initials(name){
+
+  return (
+    name ||
+    '?'
+  )
+  .trim()
+  .charAt(0)
+  .toUpperCase();
+
+}
+
+
+/* =========================================================
+   AUTH MODE
+========================================================= */
+
+function switchAuthMode(mode){
+
+  isSignUp =
+    mode === 'signup';
+
+  const btn =
+    document.getElementById(
+      'authBtn'
+    );
+
+  const tabLogin =
+    document.getElementById(
+      'tabLogin'
+    );
+
+  const tabSignup =
+    document.getElementById(
+      'tabSignup'
+    );
+
+  const title =
+    document
+      .getElementById('screen-auth')
+      .querySelector('h1');
+
+
+  if(isSignUp){
+
+    title.innerHTML =
+      'حساب جديد في ' +
+      '<span class="brand-title-blue">' +
+      'Message App' +
+      '</span>';
+
+    btn.innerText =
+      'إنشاء الحساب';
+
+    tabSignup.classList.add(
+      'active'
+    );
+
+    tabLogin.classList.remove(
+      'active'
+    );
+
+  }else{
+
+    title.innerHTML =
+      'أهلاً بك في ' +
+      '<span class="brand-title-blue">' +
+      'Message App' +
+      '</span>';
+
+    btn.innerText =
+      'متابعة';
+
+    tabLogin.classList.add(
+      'active'
+    );
+
+    tabSignup.classList.remove(
+      'active'
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
+
+async function requestNotificationPermission(){
+
+  if(
+    window.Notification &&
+    Notification.permission !== 'granted'
+  ){
+
+    try{
+
+      await Notification.requestPermission();
+
+    }catch(e){
+
+      console.warn(
+        'Notification permission:',
+        e
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   PERMISSIONS
+========================================================= */
+
+document
+  .getElementById(
+    'requestPermissionsBtn'
+  )
+  .onclick =
+  async function(){
+
+    try{
+
+      await requestNotificationPermission();
+
+      if(
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ){
+
+        throw new Error(
+          'المتصفح لا يدعم الوصول للكاميرا والمايكروفون.'
+        );
+
       }
-    }).catch(e => logDebug('❌ خطأ setRemoteDescription: ' + e.message));
-  }
-  else if(payload.ice){
-    if(peerConnection && peerConnection.remoteDescription){
-      peerConnection.addIceCandidate(new RTCIceCandidate(payload.ice)).catch(e => logDebug('❌ خطأ addIceCandidate مباشر: ' + e.message));
-    } else {
-      // لم يصل الـ offer/answer بعد، خزّن المرشح لتطبيقه لاحقاً
-      logDebug('⏳ تخزين مرشح ICE مؤقتاً (remoteDescription غير جاهز)');
-      pendingCandidates.push(payload.ice);
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video:true,
+
+          audio:true
+
+        });
+
+
+      stream
+        .getTracks()
+        .forEach(track => {
+
+          track.stop();
+
+        });
+
+
+      alert(
+        'تم منح أذونات الكاميرا والمايكروفون بنجاح!'
+      );
+
+    }catch(error){
+
+      alert(
+        'تعذر الحصول على الأذونات:\n' +
+        error.message
+      );
+
     }
+
+  };
+
+
+/* =========================================================
+   LOGIN / SIGNUP
+========================================================= */
+
+document
+  .getElementById('authBtn')
+  .onclick =
+  async function(){
+
+    const username =
+      document
+        .getElementById(
+          'usernameInput'
+        )
+        .value
+        .trim();
+
+    const password =
+      document
+        .getElementById(
+          'passwordInput'
+        )
+        .value
+        .trim();
+
+
+    if(
+      !username ||
+      !password
+    ){
+
+      alert(
+        'الرجاء إدخال اسم المستخدم وكلمة المرور'
+      );
+
+      return;
+
+    }
+
+
+    requestNotificationPermission();
+
+
+    const btn =
+      document.getElementById(
+        'authBtn'
+      );
+
+    btn.disabled = true;
+
+
+    try{
+
+      if(isSignUp){
+
+        const {
+          data:existing,
+          error:existingError
+        } =
+          await supabaseClient
+            .from('profiles')
+            .select('username')
+            .eq(
+              'username',
+              username
+            )
+            .maybeSingle();
+
+
+        if(existingError){
+
+          alert(
+            'خطأ: ' +
+            existingError.message
+          );
+
+          return;
+
+        }
+
+
+        if(existing){
+
+          alert(
+            'اسم المستخدم موجود مسبقاً.'
+          );
+
+          return;
+
+        }
+
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from('profiles')
+            .insert([{
+
+              username,
+
+              password
+
+            }]);
+
+
+        if(error){
+
+          alert(
+            'خطأ: ' +
+            error.message
+          );
+
+          return;
+
+        }
+
+
+        loginSuccess(
+          username
+        );
+
+      }else{
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq(
+              'username',
+              username
+            )
+            .eq(
+              'password',
+              password
+            )
+            .maybeSingle();
+
+
+        if(
+          error ||
+          !data
+        ){
+
+          alert(
+            'اسم المستخدم أو كلمة المرور غير صحيحة!'
+          );
+
+          return;
+
+        }
+
+
+        loginSuccess(
+          username
+        );
+
+      }
+
+    }finally{
+
+      btn.disabled = false;
+
+    }
+
+  };
+
+
+/* =========================================================
+   LOGIN SUCCESS
+========================================================= */
+
+function loginSuccess(username){
+
+  currentUsername =
+    username;
+
+  localStorage.setItem(
+    'chat_current_user',
+    username
+  );
+
+  document.getElementById(
+    'meName'
+  ).innerText =
+    currentUsername;
+
+  showScreen(
+    'screen-friends'
+  );
+
+  loadExistingChats();
+
+  subscribeToRealtime();
+
+  subscribeToCallSignaling();
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+document
+  .getElementById('logoutBtn')
+  .onclick =
+  async function(){
+
+    /*
+     * إذا كانت هناك مكالمة
+     */
+    if(jitsiApi){
+
+      closeJitsiCall(
+        true
+      );
+
+    }
+
+
+    if(myInboxChannel){
+
+      await supabaseClient
+        .removeChannel(
+          myInboxChannel
+        );
+
+      myInboxChannel = null;
+
+    }
+
+
+    if(messageChannel){
+
+      await supabaseClient
+        .removeChannel(
+          messageChannel
+        );
+
+      messageChannel = null;
+
+    }
+
+
+    localStorage.removeItem(
+      'chat_current_user'
+    );
+
+    currentUsername = '';
+
+    currentReceiver = '';
+
+    friends = [];
+
+    activeCallWith = '';
+
+    showScreen(
+      'screen-auth'
+    );
+
+  };
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+document
+  .getElementById(
+    'settingsNavBtn'
+  )
+  .onclick =
+  function(){
+
+    document.getElementById(
+      'editUsernameInput'
+    ).value =
+      currentUsername;
+
+    document.getElementById(
+      'editPasswordInput'
+    ).value =
+      '';
+
+    showScreen(
+      'screen-settings'
+    );
+
+  };
+
+
+document
+  .getElementById(
+    'settingsBackBtn'
+  )
+  .onclick =
+  function(){
+
+    showScreen(
+      'screen-friends'
+    );
+
+  };
+
+
+document
+  .getElementById(
+    'saveProfileBtn'
+  )
+  .onclick =
+  async function(){
+
+    const newName =
+      document
+        .getElementById(
+          'editUsernameInput'
+        )
+        .value
+        .trim();
+
+    const newPass =
+      document
+        .getElementById(
+          'editPasswordInput'
+        )
+        .value
+        .trim();
+
+
+    if(!newName){
+
+      alert(
+        'اسم المستخدم مطلوب'
+      );
+
+      return;
+
+    }
+
+
+    const updateData = {
+
+      username:newName
+
+    };
+
+
+    if(newPass){
+
+      updateData.password =
+        newPass;
+
+    }
+
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from('profiles')
+        .update(
+          updateData
+        )
+        .eq(
+          'username',
+          currentUsername
+        );
+
+
+    if(error){
+
+      alert(
+        'خطأ: ' +
+        error.message
+      );
+
+      return;
+
+    }
+
+
+    currentUsername =
+      newName;
+
+    localStorage.setItem(
+      'chat_current_user',
+      currentUsername
+    );
+
+    document.getElementById(
+      'meName'
+    ).innerText =
+      currentUsername;
+
+
+    alert(
+      'تم الحفظ بنجاح!'
+    );
+
+    showScreen(
+      'screen-friends'
+    );
+
+  };
+
+
+/* =========================================================
+   FRIENDS
+========================================================= */
+
+document
+  .getElementById(
+    'startChatBtn'
+  )
+  .onclick =
+  function(){
+
+    const name =
+      document
+        .getElementById(
+          'newFriendInput'
+        )
+        .value
+        .trim();
+
+
+    if(
+      !name ||
+      name === currentUsername
+    ){
+
+      alert(
+        'الرجاء إدخال اسم صحيح'
+      );
+
+      return;
+
+    }
+
+
+    if(
+      !friends.includes(name)
+    ){
+
+      friends.push(
+        name
+      );
+
+    }
+
+
+    document.getElementById(
+      'newFriendInput'
+    ).value =
+      '';
+
+
+    renderFriends();
+
+    openChat(name);
+
+  };
+
+
+async function loadExistingChats(){
+
+  if(!currentUsername)
+    return;
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('message')
+      .select(
+        'sender, receiver'
+      )
+      .or(
+        `sender.eq.${currentUsername},receiver.eq.${currentUsername}`
+      );
+
+
+  if(
+    !error &&
+    data
+  ){
+
+    data.forEach(
+      message => {
+
+        const other =
+          message.sender === currentUsername
+            ? message.receiver
+            : message.sender;
+
+
+        if(
+          other &&
+          !friends.includes(other)
+        ){
+
+          friends.push(
+            other
+          );
+
+        }
+
+      }
+    );
+
+
+    renderFriends();
+
   }
+
 }
 
-async function startCall(withVideo){
-  activeCallWith = currentReceiver;
-  isVideoCallActive = withVideo;
-  pendingCandidates = [];
-  const dp = document.getElementById('debugPanel'); if(dp) dp.innerHTML = '';
-  logDebug('▶️ startCall, activeCallWith=' + activeCallWith);
 
-  ringingTone.play().catch(e => {});
+function renderFriends(){
 
-  // نجهز الكاميرا/المايك ونعرض شاشة المكالمة فوراً حتى يشوف المتصل نفسه وهو يرن،
-  // لكن الـ offer الفعلي (WebRTC) يُرسل لاحقاً فقط بعد ما يقبل الطرف الآخر.
-  await setupWebRTCStream(withVideo);
-  document.getElementById('webrtc-container').style.display = 'flex';
-  const statusEl = document.getElementById('callStatusLabel');
-  if(statusEl){ statusEl.style.display = 'block'; statusEl.innerText = 'جاري الاتصال...'; }
+  const el =
+    document.getElementById(
+      'friendsScroll'
+    );
 
-  console.log('[تشخيص] إرسال إشارة اتصال إلى:', activeCallWith);
-  sendWebRTCSignal(activeCallWith, { kind: 'call-offer', hasVideo: withVideo });
+  el.innerHTML = '';
+
+
+  if(
+    friends.length === 0
+  ){
+
+    el.innerHTML =
+      `
+      <div class="empty-note">
+        لا توجد محادثات حالياً.
+        <br>
+        أدخل اسم صديقك في الأعلى لبدء الدردشة.
+      </div>
+      `;
+
+    return;
+
+  }
+
+
+  friends.forEach(
+    friend => {
+
+      const row =
+        document.createElement(
+          'div'
+        );
+
+      row.className =
+        'friend-row';
+
+
+      row.innerHTML =
+        `
+        <div class="avatar">
+          ${initials(friend)}
+        </div>
+
+        <div class="friend-meta">
+
+          <div class="name">
+            ${escapeHtml(friend)}
+          </div>
+
+          <div class="preview">
+            انقر لفتح المحادثة
+          </div>
+
+        </div>
+        `;
+
+
+      row.onclick =
+        () => openChat(
+          friend
+        );
+
+
+      el.appendChild(
+        row
+      );
+
+    }
+  );
+
 }
 
-async function acceptCall(){
-  ringingTone.pause(); ringingTone.currentTime = 0;
-  document.getElementById('incomingCall').classList.remove('active');
-  pendingCandidates = [];
-  const dp = document.getElementById('debugPanel'); if(dp) dp.innerHTML = '';
-  logDebug('▶️ acceptCall, incomingCaller=' + incomingCaller);
 
-  await setupWebRTCStream(incomingHasVideo);
-  document.getElementById('webrtc-container').style.display = 'flex';
-  const statusEl2 = document.getElementById('callStatusLabel');
-  if(statusEl2){ statusEl2.style.display = 'block'; statusEl2.innerText = 'جاري الاتصال...'; }
+/* =========================================================
+   CHAT
+========================================================= */
 
-  createPeerConnection(false);
+function openChat(friend){
 
-  // نخبر المتصل بأننا جاهزون الآن فقط لاستقبال الـ offer
-  sendWebRTCSignal(incomingCaller, { kind: 'call-accept' });
+  currentReceiver =
+    friend;
+
+  document.getElementById(
+    'chatName'
+  ).innerText =
+    friend;
+
+  document.getElementById(
+    'chatAvatar'
+  ).innerText =
+    initials(friend);
+
+  showScreen(
+    'screen-chat'
+  );
+
+  loadMessages();
+
 }
+
+
+document
+  .getElementById('backBtn')
+  .onclick =
+  function(){
+
+    currentReceiver =
+      '';
+
+    showScreen(
+      'screen-friends'
+    );
+
+    loadExistingChats();
+
+  };
+
+
+/* =========================================================
+   SEND MESSAGE
+========================================================= */
+
+async function sendMessage(
+  textToSend = null,
+  audioUrlToSend = null
+){
+
+  const input =
+    document.getElementById(
+      'msgInput'
+    );
+
+
+  const text =
+    textToSend !== null
+      ? textToSend
+      : input.value.trim();
+
+
+  if(
+    !text &&
+    !audioUrlToSend
+  ){
+
+    return;
+
+  }
+
+
+  if(
+    textToSend === null
+  ){
+
+    input.value =
+      '';
+
+  }
+
+
+  const payload = {
+
+    sender:
+      currentUsername,
+
+    receiver:
+      currentReceiver,
+
+    text:
+      text || '',
+
+    audio_url:
+      audioUrlToSend || null
+
+  };
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from('message')
+      .insert([
+        payload
+      ]);
+
+
+  if(error){
+
+    alert(
+      'تعذر إرسال الرسالة: ' +
+      error.message
+    );
+
+  }
+
+}
+
+
+document
+  .getElementById('sendBtn')
+  .onclick =
+  () => sendMessage();
+
+
+document
+  .getElementById('msgInput')
+  .addEventListener(
+    'keypress',
+    event => {
+
+      if(
+        event.key === 'Enter'
+      ){
+
+        sendMessage();
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   LOAD MESSAGES
+========================================================= */
+
+async function loadMessages(){
+
+  if(
+    !currentUsername ||
+    !currentReceiver
+  ){
+
+    return;
+
+  }
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('message')
+      .select('*')
+      .or(
+        `and(sender.eq.${currentUsername},receiver.eq.${currentReceiver}),and(sender.eq.${currentReceiver},receiver.eq.${currentUsername})`
+      )
+      .order(
+        'created_at',
+        {
+          ascending:true
+        }
+      );
+
+
+  const box =
+    document.getElementById(
+      'messagesEl'
+    );
+
+  box.innerHTML =
+    '';
+
+
+  if(
+    !error &&
+    data
+  ){
+
+    data.forEach(
+      appendMessage
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   APPEND MESSAGE
+========================================================= */
+
+function appendMessage(msg){
+
+  const relevant =
+    (
+      msg.sender === currentUsername &&
+      msg.receiver === currentReceiver
+    ) ||
+    (
+      msg.sender === currentReceiver &&
+      msg.receiver === currentUsername
+    );
+
+
+  if(!relevant)
+    return;
+
+
+  const box =
+    document.getElementById(
+      'messagesEl'
+    );
+
+
+  const div =
+    document.createElement(
+      'div'
+    );
+
+
+  div.className =
+    'bubble ' +
+    (
+      msg.sender === currentUsername
+        ? 'me'
+        : 'them'
+    );
+
+
+  if(msg.audio_url){
+
+    const label =
+      document.createElement(
+        'div'
+      );
+
+    label.style.fontSize =
+      '12px';
+
+    label.style.marginBottom =
+      '4px';
+
+    label.style.opacity =
+      '.8';
+
+    label.innerText =
+      '🎤 رسالة صوتية';
+
+
+    const audio =
+      document.createElement(
+        'audio'
+      );
+
+    audio.controls =
+      true;
+
+    audio.className =
+      'voice-player';
+
+    audio.src =
+      msg.audio_url;
+
+
+    div.appendChild(
+      label
+    );
+
+    div.appendChild(
+      audio
+    );
+
+  }else{
+
+    div.innerText =
+      msg.text || '';
+
+  }
+
+
+  box.appendChild(
+    div
+  );
+
+  box.scrollTop =
+    box.scrollHeight;
+
+}
+
+
+/* =========================================================
+   REALTIME MESSAGES
+========================================================= */
+
+function subscribeToRealtime(){
+
+  if(!currentUsername)
+    return;
+
+
+  if(messageChannel){
+
+    supabaseClient
+      .removeChannel(
+        messageChannel
+      );
+
+    messageChannel =
+      null;
+
+  }
+
+
+  messageChannel =
+    supabaseClient
+      .channel(
+        'messages-' +
+        currentUsername +
+        '-' +
+        Date.now()
+      );
+
+
+  messageChannel
+    .on(
+      'postgres_changes',
+      {
+        event:'INSERT',
+        schema:'public',
+        table:'message'
+      },
+      payload => {
+
+        appendMessage(
+          payload.new
+        );
+
+      }
+    )
+    .subscribe();
+
+}
+
+
+/* =========================================================
+   VOICE MESSAGE
+========================================================= */
+
+let mediaRecorder =
+  null;
+
+let audioChunks =
+  [];
+
+let isRecording =
+  false;
+
+
+document
+  .getElementById('voiceBtn')
+  .onclick =
+  async function(){
+
+    const btn =
+      document.getElementById(
+        'voiceBtn'
+      );
+
+
+    if(!isRecording){
+
+      try{
+
+        const stream =
+          await navigator
+            .mediaDevices
+            .getUserMedia({
+              audio:true
+            });
+
+
+        mediaRecorder =
+          new MediaRecorder(
+            stream
+          );
+
+
+        audioChunks =
+          [];
+
+
+        mediaRecorder.ondataavailable =
+          event => {
+
+            if(
+              event.data.size > 0
+            ){
+
+              audioChunks.push(
+                event.data
+              );
+
+            }
+
+          };
+
+
+        mediaRecorder.onstop =
+          async () => {
+
+            const audioBlob =
+              new Blob(
+                audioChunks,
+                {
+                  type:'audio/webm'
+                }
+              );
+
+
+            const reader =
+              new FileReader();
+
+
+            reader.readAsDataURL(
+              audioBlob
+            );
+
+
+            reader.onloadend =
+              async () => {
+
+                await sendMessage(
+                  '🎤 [مقطع صوتي]',
+                  reader.result
+                );
+
+              };
+
+
+            stream
+              .getTracks()
+              .forEach(
+                track =>
+                  track.stop()
+              );
+
+          };
+
+
+        mediaRecorder.start();
+
+        isRecording =
+          true;
+
+        btn.classList.add(
+          'recording'
+        );
+
+      }catch(error){
+
+        alert(
+          'تعذر الوصول للمايكروفون: ' +
+          error.message
+        );
+
+      }
+
+    }else{
+
+      if(
+        mediaRecorder &&
+        mediaRecorder.state !==
+        'inactive'
+      ){
+
+        mediaRecorder.stop();
+
+      }
+
+      isRecording =
+        false;
+
+      btn.classList.remove(
+        'recording'
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   JITSI SIGNALING
+========================================================= */
+
+function subscribeToCallSignaling(){
+
+  if(!currentUsername)
+    return;
+
+
+  if(myInboxChannel){
+
+    supabaseClient
+      .removeChannel(
+        myInboxChannel
+      );
+
+    myInboxChannel =
+      null;
+
+  }
+
+
+  myInboxChannel =
+    supabaseClient.channel(
+      'calls-' +
+      currentUsername
+    );
+
+
+  myInboxChannel
+    .on(
+      'broadcast',
+      {
+        event:'signal'
+      },
+      ({payload}) => {
+
+        handleIncomingCallSignal(
+          payload
+        );
+
+      }
+    )
+    .subscribe();
+
+}
+
+
+/* =========================================================
+   SEND CALL SIGNAL
+========================================================= */
+
+function sendCallSignal(
+  toUser,
+  data
+){
+
+  if(!toUser)
+    return;
+
+
+  const channel =
+    supabaseClient.channel(
+      'calls-' +
+      toUser
+    );
+
+
+  channel.subscribe(
+    status => {
+
+      if(
+        status ===
+        'SUBSCRIBED'
+      ){
+
+        channel.send({
+
+          type:'broadcast',
+
+          event:'signal',
+
+          payload:{
+
+            ...data,
+
+            from:
+              currentUsername
+
+          }
+
+        });
+
+
+        setTimeout(
+          () => {
+
+            supabaseClient
+              .removeChannel(
+                channel
+              );
+
+          },
+          1500
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   INCOMING CALL SIGNAL
+========================================================= */
+
+function handleIncomingCallSignal(
+  payload
+){
+
+  if(!payload)
+    return;
+
+
+  /*
+   * مكالمة جديدة
+   */
+
+  if(
+    payload.kind ===
+    'jitsi-call'
+  ){
+
+    /*
+     * لا تعرض مكالمة لنفس المستخدم
+     */
+
+    if(
+      payload.from ===
+      currentUsername
+    ){
+
+      return;
+
+    }
+
+
+    /*
+     * إذا كنت داخل مكالمة بالفعل
+     */
+
+    if(
+      activeCallWith &&
+      jitsiApi
+    ){
+
+      sendCallSignal(
+        payload.from,
+        {
+          kind:
+            'jitsi-busy'
+        }
+      );
+
+      return;
+
+    }
+
+
+    incomingCaller =
+      payload.from;
+
+    incomingHasVideo =
+      !!payload.hasVideo;
+
+    incomingJitsiRoom =
+      payload.room;
+
+
+    document.getElementById(
+      'incomingAvatar'
+    ).innerText =
+      initials(
+        incomingCaller
+      );
+
+
+    document.getElementById(
+      'incomingName'
+    ).innerText =
+      incomingCaller;
+
+
+    document.getElementById(
+      'incomingType'
+    ).innerText =
+      incomingHasVideo
+        ? 'مكالمة فيديو واردة...'
+        : 'مكالمة صوتية واردة...';
+
+
+    document
+      .getElementById(
+        'incomingCall'
+      )
+      .classList.add(
+        'active'
+      );
+
+
+    ringingTone
+      .currentTime =
+      0;
+
+
+    ringingTone
+      .play()
+      .catch(
+        () => {}
+      );
+
+
+    return;
+
+  }
+
+
+  /*
+   * الطرف الآخر قبل المكالمة
+   */
+
+  if(
+    payload.kind ===
+    'jitsi-accepted'
+  ){
+
+    ringingTone.pause();
+
+    ringingTone.currentTime =
+      0;
+
+
+    if(
+      payload.room &&
+      activeCallWith ===
+      payload.from
+    ){
+
+      openJitsiCall(
+        activeCallWith,
+        payload.room,
+        isVideoCallActive
+      );
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+   * الطرف الآخر مشغول
+   */
+
+  if(
+    payload.kind ===
+    'jitsi-busy'
+  ){
+
+    ringingTone.pause();
+
+    ringingTone.currentTime =
+      0;
+
+
+    if(
+      activeCallWith ===
+      payload.from
+    ){
+
+      closeJitsiCall(
+        false
+      );
+
+      alert(
+        'الطرف الآخر مشغول حالياً.'
+      );
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+   * الطرف الآخر رفض
+   */
+
+  if(
+    payload.kind ===
+    'jitsi-declined'
+  ){
+
+    ringingTone.pause();
+
+    ringingTone.currentTime =
+      0;
+
+
+    if(
+      activeCallWith ===
+      payload.from
+    ){
+
+      closeJitsiCall(
+        false
+      );
+
+      alert(
+        'رفض الطرف الآخر المكالمة.'
+      );
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+   * الطرف الآخر أغلق المكالمة
+   */
+
+  if(
+    payload.kind ===
+    'jitsi-hangup'
+  ){
+
+    if(
+      activeCallWith ===
+      payload.from
+    ){
+
+      closeJitsiCall(
+        false
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   GENERATE JITSI ROOM
+========================================================= */
+
+function generateJitsiRoom(){
+
+  const randomPart =
+    Math.random()
+      .toString(36)
+      .substring(2,12);
+
+
+  const timePart =
+    Date.now()
+      .toString(36);
+
+
+  /*
+   * اسم غرفة صعب التخمين نسبياً
+   */
+
+  return (
+    'MessageApp-' +
+    timePart +
+    '-' +
+    randomPart
+  );
+
+}
+
+
+/* =========================================================
+   START CALL
+========================================================= */
+
+function startCall(
+  withVideo
+){
+
+  if(!currentReceiver)
+    return;
+
+
+  /*
+   * منع إنشاء مكالمة ثانية
+   */
+
+  if(
+    activeCallWith ||
+    jitsiApi
+  ){
+
+    alert(
+      'لديك مكالمة نشطة بالفعل.'
+    );
+
+    return;
+
+  }
+
+
+  activeCallWith =
+    currentReceiver;
+
+  isVideoCallActive =
+    !!withVideo;
+
+
+  activeJitsiRoom =
+    generateJitsiRoom();
+
+
+  isClosingJitsi =
+    false;
+
+
+  /*
+   * عرض شاشة الاتصال
+   */
+
+  showJitsiContainer();
+
+
+  document.getElementById(
+    'jitsiCallTitle'
+  ).innerText =
+    withVideo
+      ? 'مكالمة فيديو مع ' +
+        activeCallWith
+      : 'مكالمة صوتية مع ' +
+        activeCallWith;
+
+
+  document.getElementById(
+    'jitsiCallStatus'
+  ).innerText =
+    'في انتظار قبول المكالمة...';
+
+
+  /*
+   * نرن عند الطرف الآخر
+   */
+
+  sendCallSignal(
+    activeCallWith,
+    {
+
+      kind:
+        'jitsi-call',
+
+      room:
+        activeJitsiRoom,
+
+      hasVideo:
+        withVideo
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   ACCEPT CALL
+========================================================= */
+
+function acceptCall(){
+
+  ringingTone.pause();
+
+  ringingTone.currentTime =
+    0;
+
+
+  document
+    .getElementById(
+      'incomingCall'
+    )
+    .classList.remove(
+      'active'
+    );
+
+
+  if(
+    !incomingCaller ||
+    !incomingJitsiRoom
+  ){
+
+    return;
+
+  }
+
+
+  activeCallWith =
+    incomingCaller;
+
+  activeJitsiRoom =
+    incomingJitsiRoom;
+
+  isVideoCallActive =
+    incomingHasVideo;
+
+
+  /*
+   * أخبر المتصل أننا قبلنا
+   */
+
+  sendCallSignal(
+    incomingCaller,
+    {
+
+      kind:
+        'jitsi-accepted',
+
+      room:
+        incomingJitsiRoom
+
+    }
+  );
+
+
+  /*
+   * افتح Jitsi
+   */
+
+  openJitsiCall(
+    incomingCaller,
+    incomingJitsiRoom,
+    incomingHasVideo
+  );
+
+
+  incomingCaller =
+    '';
+
+  incomingJitsiRoom =
+    '';
+
+}
+
+
+/* =========================================================
+   DECLINE CALL
+========================================================= */
 
 function declineCall(){
-  ringingTone.pause(); ringingTone.currentTime = 0;
-  document.getElementById('incomingCall').classList.remove('active');
-  if(incomingCaller) sendWebRTCSignal(incomingCaller, { kind: 'call-decline' });
-  incomingCaller = '';
-}
 
-async function setupWebRTCStream(withVideo){
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: withVideo, audio: true });
-    document.getElementById('localVideo').srcObject = localStream;
-    if(!withVideo) document.getElementById('localVideo').style.display = 'none';
-    else document.getElementById('localVideo').style.display = 'block';
-  } catch (e) {
-    alert('فشل تشغيل الكاميرا أو الميكروفون: ' + e.message);
-  }
-}
+  ringingTone.pause();
 
-function updateCallStatusLabel(state){
-  const el = document.getElementById('callStatusLabel');
-  if(!el) return;
-  const map = {
-    'new': 'جاري الاتصال...',
-    'checking': 'جاري تجربة الاتصال...',
-    'connected': 'متصل ✅',
-    'completed': 'متصل ✅',
-    'disconnected': 'انقطع الاتصال مؤقتاً...',
-    'failed': 'فشل الاتصال ❌ (مشكلة شبكة)',
-    'closed': 'انتهت المكالمة'
-  };
-  el.innerText = map[state] || state;
-  if(state === 'connected' || state === 'completed'){
-    setTimeout(() => { if(el) el.style.display = 'none'; }, 2000);
-  } else {
-    el.style.display = 'block';
-  }
-}
+  ringingTone.currentTime =
+    0;
 
-function createPeerConnection(isInitiator){
-  logDebug('🔧 createPeerConnection isInitiator=' + isInitiator + ' localStream=' + (localStream ? (localStream.getTracks().length + ' tracks') : 'NULL'));
-  peerConnection = new RTCPeerConnection(rtcConfig);
-  remoteStream = new MediaStream();
-  document.getElementById('remoteVideo').srcObject = remoteStream;
 
-  if(localStream){
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-  } else {
-    logDebug('⚠️ لا يوجد localStream وقت إنشاء الاتصال!');
+  document
+    .getElementById(
+      'incomingCall'
+    )
+    .classList.remove(
+      'active'
+    );
+
+
+  if(incomingCaller){
+
+    sendCallSignal(
+      incomingCaller,
+      {
+
+        kind:
+          'jitsi-declined'
+
+      }
+    );
+
   }
 
-  peerConnection.ontrack = event => {
-    logDebug('📹 ontrack: استلمت مسار ' + event.track.kind);
-    event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-  };
 
-  peerConnection.onicecandidate = event => {
-    if(event.candidate){
-      logDebug('🧊 مرشح ICE محلي (' + event.candidate.type + ') يُرسل...');
-      sendWebRTCSignal(activeCallWith, { ice: event.candidate });
-    } else {
-      logDebug('🧊 انتهى تجميع مرشحات ICE');
+  incomingCaller =
+    '';
+
+  incomingJitsiRoom =
+    '';
+
+}
+
+
+/* =========================================================
+   SHOW JITSI
+========================================================= */
+
+function showJitsiContainer(){
+
+  document
+    .getElementById(
+      'jitsi-container'
+    )
+    .classList.add(
+      'active'
+    );
+
+}
+
+
+/* =========================================================
+   OPEN JITSI
+========================================================= */
+
+function openJitsiCall(
+  friend,
+  room,
+  withVideo
+){
+
+  if(!room)
+    return;
+
+
+  activeCallWith =
+    friend;
+
+  activeJitsiRoom =
+    room;
+
+  isVideoCallActive =
+    !!withVideo;
+
+
+  showJitsiContainer();
+
+
+  const container =
+    document.getElementById(
+      'jitsiMeet'
+    );
+
+
+  container.innerHTML =
+    '';
+
+
+  /*
+   * تنظيف جلسة سابقة
+   */
+
+  if(jitsiApi){
+
+    try{
+
+      jitsiApi.dispose();
+
+    }catch(error){
+
+      console.warn(
+        'Jitsi dispose:',
+        error
+      );
+
     }
-  };
 
-  peerConnection.oniceconnectionstatechange = () => {
-    logDebug('🔌 ICE state: ' + peerConnection.iceConnectionState);
-    updateCallStatusLabel(peerConnection.iceConnectionState);
-  };
-  peerConnection.onconnectionstatechange = () => {
-    logDebug('🔗 Connection state: ' + peerConnection.connectionState);
-  };
-  peerConnection.onsignalingstatechange = () => {
-    logDebug('📶 Signaling state: ' + peerConnection.signalingState);
-  };
+    jitsiApi =
+      null;
 
-  if(isInitiator){
-    peerConnection.createOffer().then(offer => {
-      logDebug('📝 تم إنشاء offer، جاري الإرسال');
-      peerConnection.setLocalDescription(offer);
-      sendWebRTCSignal(activeCallWith, { sdp: offer });
-    }).catch(e => logDebug('❌ خطأ بإنشاء offer: ' + e.message));
   }
+
+
+  isJitsiMuted =
+    false;
+
+  isJitsiVideoOff =
+    !withVideo;
+
+
+  updateJitsiButtons();
+
+
+  document.getElementById(
+    'jitsiCallTitle'
+  ).innerText =
+    withVideo
+      ? 'مكالمة فيديو مع ' +
+        friend
+      : 'مكالمة صوتية مع ' +
+        friend;
+
+
+  document.getElementById(
+    'jitsiCallStatus'
+  ).innerText =
+    'جاري فتح المكالمة...';
+
+
+  /*
+   * تحقق من توفر Jitsi API
+   */
+
+  if(
+    typeof JitsiMeetExternalAPI ===
+    'undefined'
+  ){
+
+    alert(
+      'تعذر تحميل Jitsi Meet. تأكد من اتصال الإنترنت.'
+    );
+
+    closeJitsiCall(
+      false
+    );
+
+    return;
+
+  }
+
+
+  /*
+   * إنشاء Jitsi
+   */
+
+  try{
+
+    jitsiApi =
+      new JitsiMeetExternalAPI(
+        'meet.jit.si',
+        {
+
+          roomName:
+            room,
+
+          parentNode:
+            container,
+
+          width:
+            '100%',
+
+          height:
+            '100%',
+
+
+          userInfo:{
+
+            displayName:
+              currentUsername
+
+          },
+
+
+          configOverwrite:{
+
+            prejoinConfig:{
+
+              enabled:
+                false
+
+            },
+
+
+            startWithAudioMuted:
+              false,
+
+
+            startWithVideoMuted:
+              !withVideo,
+
+
+            disableAP:
+              true,
+
+
+            disableDeepLinking:
+              true
+
+          },
+
+
+          interfaceConfigOverwrite:{
+
+            TOOLBAR_BUTTONS:[
+
+              'microphone',
+
+              'camera',
+
+              'hangup',
+
+              'tileview'
+
+            ],
+
+
+            SHOW_JITSI_WATERMARK:
+              false,
+
+
+            SHOW_WATERMARK_FOR_GUESTS:
+              false,
+
+
+            MOBILE_APP_PROMO:
+              false
+
+          }
+
+        }
+      );
+
+
+    /*
+     * انضمام ناجح
+     */
+
+    jitsiApi.addEventListener(
+      'videoConferenceJoined',
+      function(){
+
+        document.getElementById(
+          'jitsiCallStatus'
+        ).innerText =
+          'متصل الآن';
+
+      }
+    );
+
+
+    /*
+     * مشارك دخل
+     */
+
+    jitsiApi.addEventListener(
+      'participantJoined',
+      function(){
+
+        document.getElementById(
+          'jitsiCallStatus'
+        ).innerText =
+          'متصل الآن';
+
+      }
+    );
+
+
+    /*
+     * Jitsi جاهز للإغلاق
+     */
+
+    jitsiApi.addEventListener(
+      'readyToClose',
+      function(){
+
+        if(
+          !isClosingJitsi
+        ){
+
+          closeJitsiCall(
+            true
+          );
+
+        }
+
+      }
+    );
+
+
+    /*
+     * مغادرة المؤتمر
+     */
+
+    jitsiApi.addEventListener(
+      'videoConferenceLeft',
+      function(){
+
+        if(
+          !isClosingJitsi
+        ){
+
+          closeJitsiCall(
+            true
+          );
+
+        }
+
+      }
+    );
+
+
+  }catch(error){
+
+    console.error(
+      'Jitsi initialization error:',
+      error
+    );
+
+
+    alert(
+      'تعذر تشغيل المكالمة:\n' +
+      error.message
+    );
+
+
+    closeJitsiCall(
+      false
+    );
+
+  }
+
 }
 
-function hangupCall(sendSignalToServer = true){
-  ringingTone.pause(); ringingTone.currentTime = 0;
-  if(sendSignalToServer && activeCallWith) {
-    sendWebRTCSignal(activeCallWith, { kind: 'call-hangup' });
-  }
-  cleanupCall();
-}
 
-function cleanupCall(){
-  if(localStream){
-    localStream.getTracks().forEach(t => t.stop());
-    localStream = null;
-  }
-  if(peerConnection){
-    peerConnection.close();
-    peerConnection = null;
-  }
-  document.getElementById('webrtc-container').style.display = 'none';
-  document.getElementById('incomingCall').classList.remove('active');
-  activeCallWith = '';
-  pendingCandidates = [];
-}
+/* =========================================================
+   CLOSE JITSI
+========================================================= */
 
-// أزرار التحكم داخل المكالمة
-document.getElementById('endCallBtn').onclick = () => hangupCall(true);
+function closeJitsiCall(
+  sendSignal = true
+){
 
-let isMuted = false;
-document.getElementById('toggleMuteBtn').onclick = () => {
-  if(localStream){
-    const audioTrack = localStream.getAudioTracks()[0];
-    if(audioTrack){
-      audioTrack.enabled = !audioTrack.enabled;
-      isMuted = !audioTrack.enabled;
-      document.getElementById('toggleMuteBtn').style.background = isMuted ? 'var(--app-danger)' : 'var(--app-panel)';
+  /*
+   * منع التكرار
+   */
+
+  if(isClosingJitsi)
+    return;
+
+
+  isClosingJitsi =
+    true;
+
+
+  ringingTone.pause();
+
+  ringingTone.currentTime =
+    0;
+
+
+  const oldFriend =
+    activeCallWith;
+
+
+  /*
+   * أخبر الطرف الآخر
+   */
+
+  if(
+    sendSignal &&
+    oldFriend
+  ){
+
+    sendCallSignal(
+      oldFriend,
+      {
+
+        kind:
+          'jitsi-hangup'
+
+      }
+    );
+
+  }
+
+
+  /*
+   * إغلاق Jitsi
+   */
+
+  if(jitsiApi){
+
+    try{
+
+      jitsiApi.dispose();
+
+    }catch(error){
+
+      console.warn(
+        'Jitsi dispose error:',
+        error
+      );
+
     }
-  }
-};
 
-let isVideoOff = false;
-document.getElementById('toggleVideoBtn').onclick = () => {
-  if(localStream){
-    const videoTrack = localStream.getVideoTracks()[0];
-    if(videoTrack){
-      videoTrack.enabled = !videoTrack.enabled;
-      isVideoOff = !videoTrack.enabled;
-      document.getElementById('toggleVideoBtn').style.background = isVideoOff ? 'var(--app-danger)' : 'var(--app-panel)';
+    jitsiApi =
+      null;
+
+  }
+
+
+  /*
+   * تنظيف iframe
+   */
+
+  document.getElementById(
+    'jitsiMeet'
+  ).innerHTML =
+    '';
+
+
+  /*
+   * إخفاء شاشة المكالمة
+   */
+
+  document
+    .getElementById(
+      'jitsi-container'
+    )
+    .classList.remove(
+      'active'
+    );
+
+
+  /*
+   * تنظيف الحالة
+   */
+
+  activeCallWith =
+    '';
+
+  activeJitsiRoom =
+    '';
+
+  isJitsiMuted =
+    false;
+
+  isJitsiVideoOff =
+    false;
+
+
+  updateJitsiButtons();
+
+
+  /*
+   * السماح بمكالمة جديدة
+   */
+
+  setTimeout(
+    () => {
+
+      isClosingJitsi =
+        false;
+
+    },
+    300
+  );
+
+}
+
+
+/* =========================================================
+   JITSI BUTTONS
+========================================================= */
+
+function updateJitsiButtons(){
+
+  const muteBtn =
+    document.getElementById(
+      'jitsiMuteBtn'
+    );
+
+  const videoBtn =
+    document.getElementById(
+      'jitsiVideoBtn'
+    );
+
+
+  if(muteBtn){
+
+    muteBtn.classList.toggle(
+      'disabled',
+      isJitsiMuted
+    );
+
+    muteBtn.innerText =
+      isJitsiMuted
+        ? '🔇'
+        : '🎤';
+
+  }
+
+
+  if(videoBtn){
+
+    videoBtn.classList.toggle(
+      'disabled',
+      isJitsiVideoOff
+    );
+
+    videoBtn.innerText =
+      isJitsiVideoOff
+        ? '🚫'
+        : '📹';
+
+  }
+
+}
+
+
+/* =========================================================
+   MUTE
+========================================================= */
+
+document
+  .getElementById(
+    'jitsiMuteBtn'
+  )
+  .onclick =
+  function(){
+
+    if(!jitsiApi)
+      return;
+
+
+    try{
+
+      jitsiApi.executeCommand(
+        'toggleAudio'
+      );
+
+
+      isJitsiMuted =
+        !isJitsiMuted;
+
+
+      updateJitsiButtons();
+
+    }catch(error){
+
+      console.warn(
+        'Jitsi audio command:',
+        error
+      );
+
     }
-  }
-};
 
-document.getElementById('videoCallBtn').onclick = () => { if(currentReceiver) startCall(true); };
-document.getElementById('audioCallBtn').onclick = () => { if(currentReceiver) startCall(false); };
-document.getElementById('acceptCallBtn').onclick = acceptCall;
-document.getElementById('declineCallBtn').onclick = declineCall;
+  };
+
+
+/* =========================================================
+   VIDEO
+========================================================= */
+
+document
+  .getElementById(
+    'jitsiVideoBtn'
+  )
+  .onclick =
+  function(){
+
+    if(!jitsiApi)
+      return;
+
+
+    /*
+     * في المكالمة الصوتية لا توجد كاميرا
+     * إلا إذا كانت Jitsi تسمح بتشغيلها لاحقاً.
+     */
+
+    try{
+
+      jitsiApi.executeCommand(
+        'toggleVideo'
+      );
+
+
+      isJitsiVideoOff =
+        !isJitsiVideoOff;
+
+
+      updateJitsiButtons();
+
+    }catch(error){
+
+      console.warn(
+        'Jitsi video command:',
+        error
+      );
+
+    }
+
+  };
+
+
+/* =========================================================
+   HANGUP BUTTON
+========================================================= */
+
+document
+  .getElementById(
+    'jitsiHangupBtn'
+  )
+  .onclick =
+  function(){
+
+    closeJitsiCall(
+      true
+    );
+
+  };
+
+
+document
+  .getElementById(
+    'jitsiCloseBtn'
+  )
+  .onclick =
+  function(){
+
+    closeJitsiCall(
+      true
+    );
+
+  };
+
+
+/* =========================================================
+   CALL BUTTONS
+========================================================= */
+
+document
+  .getElementById(
+    'videoCallBtn'
+  )
+  .onclick =
+  function(){
+
+    if(currentReceiver){
+
+      startCall(
+        true
+      );
+
+    }
+
+  };
+
+
+document
+  .getElementById(
+    'audioCallBtn'
+  )
+  .onclick =
+  function(){
+
+    if(currentReceiver){
+
+      startCall(
+        false
+      );
+
+    }
+
+  };
+
+
+document
+  .getElementById(
+    'acceptCallBtn'
+  )
+  .onclick =
+  acceptCall;
+
+
+document
+  .getElementById(
+    'declineCallBtn'
+  )
+  .onclick =
+  declineCall;
+
+
+/* =========================================================
+   HTML ESCAPE
+========================================================= */
+
+function escapeHtml(value){
+
+  return String(value || '')
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+    .replace(
+      /</g,
+      '&lt;'
+    )
+    .replace(
+      />/g,
+      '&gt;'
+    )
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+    .replace(
+      /'/g,
+      '&#039;'
+    );
+
+}
+
 </script>
+
 </body>
 </html>
+
+
