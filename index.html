@@ -12,8 +12,8 @@
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Jitsi Meet -->
-<script src="https://meet.jit.si/external_api.js"></script>
+<!-- Daily.co (بديل Jitsi - بدون أي تسجيل دخول للمستخدمين) -->
+<script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
 
 <style>
 
@@ -599,7 +599,7 @@ audio.voice-player{
 }
 
 /* =========================================================
-   JITSI CALL SCREEN
+   CALL SCREEN (Daily.co)
 ========================================================= */
 
 #jitsi-container{
@@ -1219,7 +1219,7 @@ audio.voice-player{
 
 
   <!-- =====================================================
-       JITSI CALL
+       CALL (Daily.co)
   ====================================================== -->
 
   <div id="jitsi-container">
@@ -1358,6 +1358,14 @@ const supabaseClient =
 
 
 /* =========================================================
+   DAILY.CO (غرفة مكالمات ثابتة - بدون أي تسجيل دخول للمستخدمين)
+========================================================= */
+
+const DAILY_ROOM_URL =
+  'https://messageapp.daily.co/messageapp';
+
+
+/* =========================================================
    GLOBAL STATE
 ========================================================= */
 
@@ -1387,10 +1395,10 @@ ringingTone.loop = true;
 
 
 /*
- * متغيرات Jitsi
+ * متغيرات المكالمة (Daily.co)
  */
 
-let jitsiApi = null;
+let dailyCallFrame = null;
 
 let activeCallWith = '';
 
@@ -1938,9 +1946,9 @@ document
     /*
      * إذا كانت هناك مكالمة
      */
-    if(jitsiApi){
+    if(dailyCallFrame){
 
-      closeJitsiCall(
+      closeDailyCall(
         true
       );
 
@@ -2834,7 +2842,7 @@ document
 
 
 /* =========================================================
-   JITSI SIGNALING
+   CALL SIGNALING (نفس آلية الإشعار/الرنين، بدون علاقة بالمزود)
 ========================================================= */
 
 function subscribeToCallSignaling(){
@@ -2989,7 +2997,7 @@ function handleIncomingCallSignal(
 
     if(
       activeCallWith &&
-      jitsiApi
+      dailyCallFrame
     ){
 
       sendCallSignal(
@@ -3079,14 +3087,12 @@ function handleIncomingCallSignal(
 
 
     if(
-      payload.room &&
       activeCallWith ===
       payload.from
     ){
 
-      openJitsiCall(
+      openDailyCall(
         activeCallWith,
-        payload.room,
         isVideoCallActive
       );
 
@@ -3118,7 +3124,7 @@ function handleIncomingCallSignal(
       payload.from
     ){
 
-      closeJitsiCall(
+      closeDailyCall(
         false
       );
 
@@ -3154,7 +3160,7 @@ function handleIncomingCallSignal(
       payload.from
     ){
 
-      closeJitsiCall(
+      closeDailyCall(
         false
       );
 
@@ -3184,7 +3190,7 @@ function handleIncomingCallSignal(
       payload.from
     ){
 
-      closeJitsiCall(
+      closeDailyCall(
         false
       );
 
@@ -3196,32 +3202,17 @@ function handleIncomingCallSignal(
 
 
 /* =========================================================
-   GENERATE JITSI ROOM
+   غرفة المكالمة (ثابتة على Daily.co)
 ========================================================= */
 
 function generateJitsiRoom(){
 
-  const randomPart =
-    Math.random()
-      .toString(36)
-      .substring(2,12);
-
-
-  const timePart =
-    Date.now()
-      .toString(36);
-
-
   /*
-   * اسم غرفة صعب التخمين نسبياً
+   * نستخدم غرفة Daily واحدة ثابتة بدل توليد غرفة عشوائية،
+   * لأن غرف Daily يجب إنشاؤها مسبقاً من لوحة التحكم.
    */
 
-  return (
-    'MessageApp-' +
-    timePart +
-    '-' +
-    randomPart
-  );
+  return DAILY_ROOM_URL;
 
 }
 
@@ -3244,7 +3235,7 @@ function startCall(
 
   if(
     activeCallWith ||
-    jitsiApi
+    dailyCallFrame
   ){
 
     alert(
@@ -3339,8 +3330,7 @@ function acceptCall(){
 
 
   if(
-    !incomingCaller ||
-    !incomingJitsiRoom
+    !incomingCaller
   ){
 
     return;
@@ -3352,7 +3342,7 @@ function acceptCall(){
     incomingCaller;
 
   activeJitsiRoom =
-    incomingJitsiRoom;
+    DAILY_ROOM_URL;
 
   isVideoCallActive =
     incomingHasVideo;
@@ -3370,19 +3360,18 @@ function acceptCall(){
         'jitsi-accepted',
 
       room:
-        incomingJitsiRoom
+        DAILY_ROOM_URL
 
     }
   );
 
 
   /*
-   * افتح Jitsi
+   * افتح المكالمة
    */
 
-  openJitsiCall(
+  openDailyCall(
     incomingCaller,
-    incomingJitsiRoom,
     incomingHasVideo
   );
 
@@ -3442,7 +3431,7 @@ function declineCall(){
 
 
 /* =========================================================
-   SHOW JITSI
+   SHOW CALL CONTAINER
 ========================================================= */
 
 function showJitsiContainer(){
@@ -3459,24 +3448,19 @@ function showJitsiContainer(){
 
 
 /* =========================================================
-   OPEN JITSI
+   OPEN CALL (Daily.co)
 ========================================================= */
 
-function openJitsiCall(
+function openDailyCall(
   friend,
-  room,
   withVideo
 ){
-
-  if(!room)
-    return;
-
 
   activeCallWith =
     friend;
 
   activeJitsiRoom =
-    room;
+    DAILY_ROOM_URL;
 
   isVideoCallActive =
     !!withVideo;
@@ -3499,22 +3483,22 @@ function openJitsiCall(
    * تنظيف جلسة سابقة
    */
 
-  if(jitsiApi){
+  if(dailyCallFrame){
 
     try{
 
-      jitsiApi.dispose();
+      dailyCallFrame.destroy();
 
     }catch(error){
 
       console.warn(
-        'Jitsi dispose:',
+        'Daily destroy:',
         error
       );
 
     }
 
-    jitsiApi =
+    dailyCallFrame =
       null;
 
   }
@@ -3547,19 +3531,19 @@ function openJitsiCall(
 
 
   /*
-   * تحقق من توفر Jitsi API
+   * تحقق من توفر Daily API
    */
 
   if(
-    typeof JitsiMeetExternalAPI ===
+    typeof DailyIframe ===
     'undefined'
   ){
 
     alert(
-      'تعذر تحميل Jitsi Meet. تأكد من اتصال الإنترنت.'
+      'تعذر تحميل خدمة المكالمات. تأكد من اتصال الإنترنت.'
     );
 
-    closeJitsiCall(
+    closeDailyCall(
       false
     );
 
@@ -3569,92 +3553,34 @@ function openJitsiCall(
 
 
   /*
-   * إنشاء Jitsi
+   * إنشاء إطار المكالمة
    */
 
   try{
 
-    jitsiApi =
-      new JitsiMeetExternalAPI(
-        'meet.jit.si',
+    dailyCallFrame =
+      DailyIframe.createFrame(
+        container,
         {
 
-          roomName:
-            room,
+          iframeStyle:{
 
-          parentNode:
-            container,
+            width:
+              '100%',
 
-          width:
-            '100%',
+            height:
+              '100%',
 
-          height:
-            '100%',
-
-
-          userInfo:{
-
-            displayName:
-              currentUsername
+            border:
+              '0'
 
           },
 
+          showLeaveButton:
+            false,
 
-          configOverwrite:{
-
-            prejoinConfig:{
-
-              enabled:
-                false
-
-            },
-
-
-            startWithAudioMuted:
-              false,
-
-
-            startWithVideoMuted:
-              !withVideo,
-
-
-            disableAP:
-              true,
-
-
-            disableDeepLinking:
-              true
-
-          },
-
-
-          interfaceConfigOverwrite:{
-
-            TOOLBAR_BUTTONS:[
-
-              'microphone',
-
-              'camera',
-
-              'hangup',
-
-              'tileview'
-
-            ],
-
-
-            SHOW_JITSI_WATERMARK:
-              false,
-
-
-            SHOW_WATERMARK_FOR_GUESTS:
-              false,
-
-
-            MOBILE_APP_PROMO:
-              false
-
-          }
+          showFullscreenButton:
+            false
 
         }
       );
@@ -3664,8 +3590,8 @@ function openJitsiCall(
      * انضمام ناجح
      */
 
-    jitsiApi.addEventListener(
-      'videoConferenceJoined',
+    dailyCallFrame.on(
+      'joined-meeting',
       function(){
 
         document.getElementById(
@@ -3681,8 +3607,8 @@ function openJitsiCall(
      * مشارك دخل
      */
 
-    jitsiApi.addEventListener(
-      'participantJoined',
+    dailyCallFrame.on(
+      'participant-joined',
       function(){
 
         document.getElementById(
@@ -3695,18 +3621,18 @@ function openJitsiCall(
 
 
     /*
-     * Jitsi جاهز للإغلاق
+     * مغادرة المكالمة
      */
 
-    jitsiApi.addEventListener(
-      'readyToClose',
+    dailyCallFrame.on(
+      'left-meeting',
       function(){
 
         if(
           !isClosingJitsi
         ){
 
-          closeJitsiCall(
+          closeDailyCall(
             true
           );
 
@@ -3717,31 +3643,43 @@ function openJitsiCall(
 
 
     /*
-     * مغادرة المؤتمر
+     * خطأ بالمكالمة
      */
 
-    jitsiApi.addEventListener(
-      'videoConferenceLeft',
-      function(){
+    dailyCallFrame.on(
+      'error',
+      function(event){
 
-        if(
-          !isClosingJitsi
-        ){
-
-          closeJitsiCall(
-            true
-          );
-
-        }
+        console.error(
+          'Daily error:',
+          event
+        );
 
       }
     );
 
 
+    dailyCallFrame.join({
+
+      url:
+        DAILY_ROOM_URL,
+
+      userName:
+        currentUsername,
+
+      startVideoOff:
+        !withVideo,
+
+      startAudioOff:
+        false
+
+    });
+
+
   }catch(error){
 
     console.error(
-      'Jitsi initialization error:',
+      'Daily initialization error:',
       error
     );
 
@@ -3752,7 +3690,7 @@ function openJitsiCall(
     );
 
 
-    closeJitsiCall(
+    closeDailyCall(
       false
     );
 
@@ -3762,10 +3700,10 @@ function openJitsiCall(
 
 
 /* =========================================================
-   CLOSE JITSI
+   CLOSE CALL (Daily.co)
 ========================================================= */
 
-function closeJitsiCall(
+function closeDailyCall(
   sendSignal = true
 ){
 
@@ -3814,32 +3752,34 @@ function closeJitsiCall(
 
 
   /*
-   * إغلاق Jitsi
+   * إغلاق المكالمة
    */
 
-  if(jitsiApi){
+  if(dailyCallFrame){
 
     try{
 
-      jitsiApi.dispose();
+      dailyCallFrame.leave();
+
+      dailyCallFrame.destroy();
 
     }catch(error){
 
       console.warn(
-        'Jitsi dispose error:',
+        'Daily destroy error:',
         error
       );
 
     }
 
-    jitsiApi =
+    dailyCallFrame =
       null;
 
   }
 
 
   /*
-   * تنظيف iframe
+   * تنظيف الحاوية
    */
 
   document.getElementById(
@@ -3899,7 +3839,7 @@ function closeJitsiCall(
 
 
 /* =========================================================
-   JITSI BUTTONS
+   CALL BUTTONS (mute/video icons)
 ========================================================= */
 
 function updateJitsiButtons(){
@@ -3958,19 +3898,19 @@ document
   .onclick =
   function(){
 
-    if(!jitsiApi)
+    if(!dailyCallFrame)
       return;
 
 
     try{
 
-      jitsiApi.executeCommand(
-        'toggleAudio'
-      );
-
-
       isJitsiMuted =
         !isJitsiMuted;
+
+
+      dailyCallFrame.setLocalAudio(
+        !isJitsiMuted
+      );
 
 
       updateJitsiButtons();
@@ -3978,7 +3918,7 @@ document
     }catch(error){
 
       console.warn(
-        'Jitsi audio command:',
+        'Daily audio command:',
         error
       );
 
@@ -3998,24 +3938,19 @@ document
   .onclick =
   function(){
 
-    if(!jitsiApi)
+    if(!dailyCallFrame)
       return;
 
 
-    /*
-     * في المكالمة الصوتية لا توجد كاميرا
-     * إلا إذا كانت Jitsi تسمح بتشغيلها لاحقاً.
-     */
-
     try{
-
-      jitsiApi.executeCommand(
-        'toggleVideo'
-      );
-
 
       isJitsiVideoOff =
         !isJitsiVideoOff;
+
+
+      dailyCallFrame.setLocalVideo(
+        !isJitsiVideoOff
+      );
 
 
       updateJitsiButtons();
@@ -4023,7 +3958,7 @@ document
     }catch(error){
 
       console.warn(
-        'Jitsi video command:',
+        'Daily video command:',
         error
       );
 
@@ -4043,7 +3978,7 @@ document
   .onclick =
   function(){
 
-    closeJitsiCall(
+    closeDailyCall(
       true
     );
 
@@ -4057,7 +3992,7 @@ document
   .onclick =
   function(){
 
-    closeJitsiCall(
+    closeDailyCall(
       true
     );
 
@@ -4154,5 +4089,3 @@ function escapeHtml(value){
 
 </body>
 </html>
-
-
