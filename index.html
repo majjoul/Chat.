@@ -1,290 +1,555 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+
 <title>Message App</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden}
-body{
-  font-family:Arial,Tahoma,sans-serif;
-  background:#080b10;
-  color:#fff;
-}
-button,input{font-family:inherit}
-button{cursor:pointer}
 
-.app{
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
   width:100%;
-  max-width:500px;
-  height:100vh;
-  margin:auto;
-  background:#0d1117;
-  position:relative;
+  height:100%;
   overflow:hidden;
 }
 
+body{
+
+  font-family:
+    Arial,
+    Tahoma,
+    sans-serif;
+
+  background:#080b10;
+  color:#fff;
+
+}
+
+button,
+input{
+  font-family:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.app{
+
+  width:100%;
+  max-width:500px;
+  height:100vh;
+
+  margin:auto;
+
+  background:#0d1117;
+
+  position:relative;
+  overflow:hidden;
+
+}
+
 .screen{
+
   display:none;
+
   width:100%;
   height:100%;
-  flex-direction:column;
-}
-.screen.active{display:flex}
 
-/* LOGIN */
+  flex-direction:column;
+
+}
+
+.screen.active{
+  display:flex;
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
 .auth{
+
   height:100%;
   overflow:auto;
+
   padding:35px 25px;
+
   display:flex;
   flex-direction:column;
   justify-content:center;
+
   background:
-    radial-gradient(circle at top right,#17366e,transparent 45%),
+    radial-gradient(
+      circle at top right,
+      #17366e,
+      transparent 45%
+    ),
     #0d1117;
+
 }
 
 .logo{
+
   width:75px;
   height:75px;
-  margin:0 auto 18px;
+
+  margin:
+    0 auto 18px;
+
   border-radius:22px;
+
   display:flex;
+
   align-items:center;
   justify-content:center;
+
   background:#2563eb;
+
   font-size:38px;
-  box-shadow:0 10px 35px #2563eb55;
+
+  box-shadow:
+    0 10px 35px #2563eb55;
+
 }
 
 .auth h1{
+
   text-align:center;
-  margin:0 0 8px;
+
+  margin:
+    0 0 8px;
+
   font-size:27px;
+
 }
+
 .auth p{
+
   text-align:center;
+
   color:#8b949e;
-  margin:0 0 30px;
+
+  margin:
+    0 0 30px;
+
 }
 
 .tabs{
+
   display:flex;
+
   gap:5px;
+
   background:#161b22;
+
   padding:5px;
+
   border-radius:12px;
+
   margin-bottom:22px;
+
 }
+
 .tabs button{
+
   flex:1;
+
   border:0;
+
   padding:12px;
+
   border-radius:9px;
+
   background:transparent;
+
   color:#8b949e;
+
 }
+
 .tabs button.active{
+
   background:#2563eb;
+
   color:white;
+
 }
 
 label{
-  display:block;
-  color:#8b949e;
-  font-size:13px;
-  margin-bottom:7px;
-}
-input{
-  width:100%;
-  padding:14px;
-  border-radius:11px;
-  border:1px solid #30363d;
-  background:#161b22;
-  color:white;
-  outline:none;
-}
-input:focus{border-color:#2563eb}
 
-.field{margin-bottom:16px}
+  display:block;
+
+  color:#8b949e;
+
+  font-size:13px;
+
+  margin-bottom:7px;
+
+}
+
+input{
+
+  width:100%;
+
+  padding:14px;
+
+  border-radius:11px;
+
+  border:1px solid #30363d;
+
+  background:#161b22;
+
+  color:white;
+
+  outline:none;
+
+}
+
+input:focus{
+  border-color:#2563eb;
+}
+
+.field{
+  margin-bottom:16px;
+}
 
 .primary{
+
   width:100%;
+
   padding:14px;
+
   border:0;
+
   border-radius:11px;
+
   color:white;
+
   background:#2563eb;
+
   font-size:16px;
+
   font-weight:bold;
+
 }
 
-/* HEADER */
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 .header{
+
   height:62px;
+
   flex-shrink:0;
+
   background:#161b22;
-  border-bottom:1px solid #30363d;
+
+  border-bottom:
+    1px solid #30363d;
+
   display:flex;
+
   align-items:center;
+
   justify-content:space-between;
+
   padding:0 15px;
+
 }
 
 .header h2{
+
   font-size:19px;
   margin:0;
+
 }
 
 .header button{
+
   background:none;
+
   border:0;
+
   color:white;
+
   font-size:20px;
+
 }
 
 .actions{
+
   display:flex;
+
   gap:15px;
+
 }
 
-/* FRIENDS */
+
+/* =========================================================
+   FRIENDS
+   ========================================================= */
+
 .account{
+
   padding:9px 15px;
+
   color:#8b949e;
-  border-bottom:1px solid #30363d;
+
+  border-bottom:
+    1px solid #30363d;
+
 }
-.account b{color:white}
+
+.account b{
+  color:white;
+}
 
 .search{
+
   display:flex;
+
   gap:8px;
+
   padding:10px;
+
 }
+
 .search button{
+
   border:0;
+
   border-radius:10px;
+
   padding:0 17px;
+
   color:white;
+
   background:#2563eb;
+
 }
 
 .list{
+
   flex:1;
+
   overflow:auto;
+
 }
 
 .friend{
+
   display:flex;
+
   align-items:center;
+
   gap:12px;
+
   padding:13px 15px;
-  border-bottom:1px solid #30363d66;
+
+  border-bottom:
+    1px solid #30363d66;
+
   cursor:pointer;
+
 }
-.friend:hover{background:#161b22}
+
+.friend:hover{
+  background:#161b22;
+}
 
 .avatar{
+
   width:48px;
   height:48px;
+
   border-radius:50%;
+
   background:#30363d;
+
   display:flex;
+
   align-items:center;
   justify-content:center;
+
   font-weight:bold;
+
   flex-shrink:0;
+
 }
 
 .friend-info{
   min-width:0;
 }
+
 .friend-name{
   font-weight:bold;
 }
+
 .friend-sub{
+
   color:#8b949e;
+
   font-size:13px;
+
   margin-top:3px;
+
 }
 
 .empty{
+
   text-align:center;
+
   color:#8b949e;
+
   padding:70px 25px;
+
   line-height:2;
+
 }
 
-/* CHAT */
+
+/* =========================================================
+   CHAT
+   ========================================================= */
+
 .chat-header{
+
   height:64px;
+
   flex-shrink:0;
+
   display:flex;
+
   align-items:center;
+
   justify-content:space-between;
+
   background:#161b22;
-  border-bottom:1px solid #30363d;
+
+  border-bottom:
+    1px solid #30363d;
+
   padding:0 10px;
+
 }
 
 .chat-user{
+
   display:flex;
+
   align-items:center;
+
   gap:9px;
-}
-.chat-user .avatar{
-  width:42px;
-  height:42px;
+
 }
 
-.chat-info b{display:block}
+.chat-user .avatar{
+
+  width:42px;
+  height:42px;
+
+}
+
+.chat-info b{
+  display:block;
+}
+
 .chat-info span{
+
   color:#3fb950;
+
   font-size:11px;
+
 }
 
 .chat-actions{
+
   display:flex;
+
   gap:8px;
+
 }
+
 .icon{
+
   border:0;
+
   background:transparent;
+
   color:white;
+
   font-size:20px;
+
   padding:8px;
+
 }
 
 .messages{
+
   flex:1;
+
   overflow:auto;
+
   padding:15px;
+
   display:flex;
+
   flex-direction:column;
+
   gap:8px;
+
 }
 
 .message{
+
   max-width:78%;
+
   padding:10px 13px;
+
   border-radius:12px;
+
   line-height:1.5;
+
   word-break:break-word;
+
 }
+
 .message.me{
+
   align-self:flex-start;
+
   background:#1d4ed8;
+
   border-top-right-radius:3px;
+
 }
+
 .message.other{
+
   align-self:flex-end;
+
   background:#21262d;
+
   border-top-left-radius:3px;
+
 }
 
 .message audio{
@@ -292,370 +557,794 @@ input:focus{border-color:#2563eb}
 }
 
 .composer{
+
   display:flex;
+
   gap:7px;
+
   padding:9px;
+
   background:#161b22;
-  border-top:1px solid #30363d;
+
+  border-top:
+    1px solid #30363d;
+
 }
-.composer input{flex:1}
+
+.composer input{
+  flex:1;
+}
+
 .composer button{
+
   width:44px;
+
   border:0;
+
   border-radius:10px;
+
   background:#2563eb;
+
   color:white;
+
   font-size:18px;
+
 }
+
 #recordBtn.recording{
   background:#f85149;
 }
 
-/* SETTINGS */
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
 .settings{
+
   flex:1;
+
   overflow:auto;
+
   padding:20px;
-}
-.card{
-  background:#161b22;
-  border:1px solid #30363d;
-  border-radius:13px;
-  padding:16px;
-  margin-bottom:15px;
-}
-.card h3{
-  margin-top:0;
-  font-size:16px;
-}
-.card p{
-  color:#8b949e;
-  font-size:13px;
-  line-height:1.6;
+
 }
 
-/* CALL */
-#callScreen{
-  position:absolute;
-  inset:0;
-  z-index:100;
-  background:#000;
-  display:none;
-  flex-direction:column;
+.card{
+
+  background:#161b22;
+
+  border:1px solid #30363d;
+
+  border-radius:13px;
+
+  padding:16px;
+
+  margin-bottom:15px;
+
 }
-#callScreen.show{display:flex}
+
+.card h3{
+
+  margin-top:0;
+
+  font-size:16px;
+
+}
+
+.card p{
+
+  color:#8b949e;
+
+  font-size:13px;
+
+  line-height:1.6;
+
+}
+
+
+/* =========================================================
+   CALL
+   ========================================================= */
+
+#callScreen{
+
+  position:absolute;
+
+  inset:0;
+
+  z-index:100;
+
+  background:#000;
+
+  display:none;
+
+  flex-direction:column;
+
+}
+
+#callScreen.show{
+  display:flex;
+}
 
 .call-top{
+
   position:absolute;
+
   top:0;
   left:0;
   right:0;
+
   z-index:5;
+
   padding:15px;
-  background:linear-gradient(#000c,transparent);
+
+  background:
+    linear-gradient(
+      #000c,
+      transparent
+    );
+
 }
-.call-title{font-weight:bold}
+
+.call-title{
+  font-weight:bold;
+}
+
 .call-status{
+
   color:#aaa;
+
   font-size:12px;
+
   margin-top:3px;
+
 }
 
 .call-stage{
+
   position:relative;
+
   flex:1;
+
   background:#000;
+
   overflow:hidden;
+
 }
 
 .remote{
+
   width:100%;
   height:100%;
+
   object-fit:cover;
+
   background:#000;
+
 }
 
 .local{
+
   position:absolute;
+
   right:12px;
   top:80px;
+
   width:115px;
   height:165px;
+
   object-fit:cover;
+
   border-radius:12px;
+
   background:#111;
+
   z-index:3;
+
 }
 
 .audio-label{
+
   position:absolute;
+
   inset:0;
+
   display:flex;
+
   align-items:center;
+
   justify-content:center;
+
   font-size:22px;
+
 }
 
 .call-controls{
+
   position:absolute;
+
   bottom:20px;
+
   left:0;
   right:0;
+
   z-index:10;
+
   display:flex;
+
   justify-content:center;
+
   gap:15px;
+
 }
 
 .call-btn{
+
   width:55px;
   height:55px;
+
   border-radius:50%;
+
   border:0;
+
   background:#303030;
+
   color:white;
+
   font-size:20px;
+
 }
+
 .call-btn.hangup{
+
   background:#f85149;
+
   width:62px;
   height:62px;
+
 }
+
+
+/* =========================================================
+   INCOMING CALL
+   ========================================================= */
 
 #incoming{
+
   display:none;
+
   position:absolute;
+
   inset:0;
+
   z-index:200;
+
   background:#080b10f7;
+
   align-items:center;
+
   justify-content:center;
+
   flex-direction:column;
+
   gap:15px;
+
 }
-#incoming.show{display:flex}
+
+#incoming.show{
+  display:flex;
+}
 
 .incoming-avatar{
+
   width:100px;
   height:100px;
+
   border-radius:50%;
+
   background:#30363d;
+
   display:flex;
+
   align-items:center;
+
   justify-content:center;
+
   font-size:35px;
+
   font-weight:bold;
+
 }
-.incoming-name{font-size:22px;font-weight:bold}
-.incoming-type{color:#8b949e}
+
+.incoming-name{
+
+  font-size:22px;
+
+  font-weight:bold;
+
+}
+
+.incoming-type{
+  color:#8b949e;
+}
 
 .incoming-buttons{
+
   display:flex;
+
   gap:35px;
+
   margin-top:20px;
+
 }
+
 .incoming-buttons button{
+
   width:62px;
   height:62px;
-  border-radius:50%;
-  border:0;
-  font-size:22px;
-  color:white;
-}
-.reject{background:#f85149}
-.accept{background:#238636}
 
-.hidden{display:none!important}
+  border-radius:50%;
+
+  border:0;
+
+  font-size:22px;
+
+  color:white;
+
+}
+
+.reject{
+  background:#f85149;
+}
+
+.accept{
+  background:#238636;
+}
+
+.hidden{
+  display:none!important;
+}
+
 </style>
+
 </head>
+
 
 <body>
 
+
 <div class="app">
 
-<!-- LOGIN -->
-<section id="loginScreen" class="screen active">
+
+<!-- =====================================================
+     LOGIN
+     ===================================================== -->
+
+<section
+  id="loginScreen"
+  class="screen active"
+>
+
   <div class="auth">
 
-    <div class="logo">💬</div>
+    <div class="logo">
+      💬
+    </div>
 
-    <h1>Message App</h1>
-    <p>تواصل مع أصدقائك بسهولة</p>
+    <h1>
+      Message App
+    </h1>
+
+    <p>
+      تواصل مع أصدقائك بسهولة
+    </p>
 
     <div class="tabs">
-      <button id="loginTab" class="active">تسجيل دخول</button>
-      <button id="signupTab">حساب جديد</button>
+
+      <button
+        id="loginTab"
+        class="active"
+      >
+        تسجيل دخول
+      </button>
+
+      <button
+        id="signupTab"
+      >
+        حساب جديد
+      </button>
+
     </div>
 
     <div class="field">
-      <label>اسم المستخدم</label>
-      <input id="username" placeholder="اسم المستخدم">
+
+      <label>
+        اسم المستخدم
+      </label>
+
+      <input
+        id="username"
+        placeholder="اسم المستخدم"
+      >
+
     </div>
 
     <div class="field">
-      <label>كلمة المرور</label>
-      <input id="password" type="password" placeholder="كلمة المرور">
+
+      <label>
+        كلمة المرور
+      </label>
+
+      <input
+        id="password"
+        type="password"
+        placeholder="كلمة المرور"
+      >
+
     </div>
 
-    <button id="authButton" class="primary">تسجيل الدخول</button>
+    <button
+      id="authButton"
+      class="primary"
+    >
+      تسجيل الدخول
+    </button>
 
   </div>
+
 </section>
 
 
-<!-- FRIENDS -->
-<section id="friendsScreen" class="screen">
+<!-- =====================================================
+     FRIENDS
+     ===================================================== -->
+
+<section
+  id="friendsScreen"
+  class="screen"
+>
 
   <div class="header">
-    <h2>💬 Message App</h2>
+
+    <h2>
+      💬 Message App
+    </h2>
 
     <div class="actions">
-      <button id="settingsButton">⚙️</button>
-      <button id="logoutButton">⏻</button>
+
+      <button
+        id="settingsButton"
+      >
+        ⚙️
+      </button>
+
+      <button
+        id="logoutButton"
+      >
+        ⏻
+      </button>
+
     </div>
+
   </div>
 
   <div class="account">
+
     الحساب:
+
     <b id="currentUserLabel"></b>
+
   </div>
 
   <div class="search">
-    <input id="friendInput" placeholder="اكتب اسم المستخدم">
-    <button id="addFriendButton">إضافة</button>
+
+    <input
+      id="friendInput"
+      placeholder="اكتب اسم المستخدم"
+    >
+
+    <button
+      id="addFriendButton"
+    >
+      إضافة
+    </button>
+
   </div>
 
-  <div id="friendsList" class="list"></div>
+  <div
+    id="friendsList"
+    class="list"
+  ></div>
 
 </section>
 
 
-<!-- SETTINGS -->
-<section id="settingsScreen" class="screen">
+<!-- =====================================================
+     SETTINGS
+     ===================================================== -->
+
+<section
+  id="settingsScreen"
+  class="screen"
+>
 
   <div class="header">
-    <h2>الإعدادات</h2>
-    <button id="settingsBack">✕</button>
+
+    <h2>
+      الإعدادات
+    </h2>
+
+    <button
+      id="settingsBack"
+    >
+      ✕
+    </button>
+
   </div>
 
   <div class="settings">
 
     <div class="card">
-      <h3>🎙️ أذونات المكالمات</h3>
+
+      <h3>
+        🎙️ أذونات المكالمات
+      </h3>
+
       <p>
-        اضغط الزر للسماح للمتصفح باستخدام الكاميرا والمايكروفون.
+        اضغط الزر للسماح للمتصفح باستخدام
+        الكاميرا والمايكروفون.
       </p>
 
-      <button id="permissionButton" class="primary">
+      <button
+        id="permissionButton"
+        class="primary"
+      >
         السماح بالكاميرا والمايكروفون
       </button>
+
     </div>
 
+
     <div class="card">
-      <h3>👤 تعديل الحساب</h3>
+
+      <h3>
+        👤 تعديل الحساب
+      </h3>
 
       <div class="field">
-        <label>اسم المستخدم</label>
-        <input id="newUsername">
+
+        <label>
+          اسم المستخدم
+        </label>
+
+        <input
+          id="newUsername"
+        >
+
       </div>
 
       <div class="field">
-        <label>كلمة المرور الجديدة</label>
-        <input id="newPassword" type="password">
+
+        <label>
+          كلمة المرور الجديدة
+        </label>
+
+        <input
+          id="newPassword"
+          type="password"
+        >
+
       </div>
 
-      <button id="saveAccount" class="primary">
+      <button
+        id="saveAccount"
+        class="primary"
+      >
         حفظ
       </button>
+
     </div>
 
   </div>
+
 </section>
 
 
-<!-- CHAT -->
-<section id="chatScreen" class="screen">
+<!-- =====================================================
+     CHAT
+     ===================================================== -->
+
+<section
+  id="chatScreen"
+  class="screen"
+>
 
   <div class="chat-header">
 
     <div class="chat-user">
 
-      <button id="backChat" class="icon">←</button>
+      <button
+        id="backChat"
+        class="icon"
+      >
+        ←
+      </button>
 
-      <div id="chatAvatar" class="avatar">?</div>
+      <div
+        id="chatAvatar"
+        class="avatar"
+      >
+        ?
+      </div>
 
       <div class="chat-info">
+
         <b id="chatName"></b>
-        <span>متصل</span>
+
+        <span>
+          متصل
+        </span>
+
       </div>
 
     </div>
 
     <div class="chat-actions">
-      <button id="videoCall" class="icon">📹</button>
-      <button id="audioCall" class="icon">📞</button>
+
+      <button
+        id="videoCall"
+        class="icon"
+      >
+        📹
+      </button>
+
+      <button
+        id="audioCall"
+        class="icon"
+      >
+        📞
+      </button>
+
     </div>
 
   </div>
 
-  <div id="messages" class="messages"></div>
+
+  <div
+    id="messages"
+    class="messages"
+  ></div>
+
 
   <div class="composer">
 
-    <input id="messageInput" placeholder="اكتب رسالة...">
+    <input
+      id="messageInput"
+      placeholder="اكتب رسالة..."
+    >
 
-    <button id="recordBtn">🎙️</button>
+    <button
+      id="recordBtn"
+    >
+      🎙️
+    </button>
 
-    <button id="sendBtn">➤</button>
+    <button
+      id="sendBtn"
+    >
+      ➤
+    </button>
 
   </div>
 
 </section>
 
 
-<!-- CALL -->
+<!-- =====================================================
+     CALL SCREEN
+     ===================================================== -->
+
 <div id="callScreen">
 
   <div class="call-top">
-    <div id="callTitle" class="call-title">المكالمة</div>
-    <div id="callStatus" class="call-status">جاري الاتصال...</div>
+
+    <div
+      id="callTitle"
+      class="call-title"
+    >
+      المكالمة
+    </div>
+
+    <div
+      id="callStatus"
+      class="call-status"
+    >
+      جاري الاتصال...
+    </div>
+
   </div>
 
-  <div id="callStage" class="call-stage"></div>
+
+  <div
+    id="callStage"
+    class="call-stage"
+  ></div>
+
 
   <div class="call-controls">
-    <button id="muteBtn" class="call-btn">🎤</button>
-    <button id="cameraBtn" class="call-btn">📹</button>
-    <button id="hangupBtn" class="call-btn hangup">✕</button>
+
+    <button
+      id="muteBtn"
+      class="call-btn"
+    >
+      🎤
+    </button>
+
+    <button
+      id="cameraBtn"
+      class="call-btn"
+    >
+      📹
+    </button>
+
+    <button
+      id="hangupBtn"
+      class="call-btn hangup"
+    >
+      ✕
+    </button>
+
   </div>
 
 </div>
 
 
-<!-- INCOMING CALL -->
+<!-- =====================================================
+     INCOMING CALL
+     ===================================================== -->
+
 <div id="incoming">
 
-  <div id="incomingAvatar" class="incoming-avatar">?</div>
+  <div
+    id="incomingAvatar"
+    class="incoming-avatar"
+  >
+    ?
+  </div>
 
-  <div id="incomingName" class="incoming-name"></div>
+  <div
+    id="incomingName"
+    class="incoming-name"
+  ></div>
 
-  <div id="incomingType" class="incoming-type">
+  <div
+    id="incomingType"
+    class="incoming-type"
+  >
     مكالمة واردة...
   </div>
 
   <div class="incoming-buttons">
 
-    <button id="rejectCall" class="reject">
+    <button
+      id="rejectCall"
+      class="reject"
+    >
       ✕
     </button>
 
-    <button id="acceptCall" class="accept">
+    <button
+      id="acceptCall"
+      class="accept"
+    >
       📞
     </button>
 
   </div>
 
 </div>
+
 
 </div>
 
@@ -667,15 +1356,16 @@ input:focus{border-color:#2563eb}
    ========================================================= */
 
 const SUPABASE_URL =
-"https://roqpinipcgwqeqqfpcjm.supabase.co";
+  "https://roqpinipcgwqeqqfpcjm.supabase.co";
 
 const SUPABASE_KEY =
-"sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK";
+  "sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK";
 
-const db = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const db =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 
 /* =========================================================
@@ -683,32 +1373,43 @@ const db = supabase.createClient(
    ========================================================= */
 
 let me = "";
+
 let currentFriend = "";
 
 let friends = [];
 
 let messageChannel = null;
+
 let callChannel = null;
 
 let pc = null;
+
 let localStream = null;
+
 let remoteStream = null;
 
 let activeCallId = "";
+
 let activeCallUser = "";
 
 let incomingCallId = "";
+
 let incomingCaller = "";
+
 let incomingOffer = null;
+
 let incomingVideo = false;
 
 let pendingIce = [];
 
 let muted = false;
+
 let cameraOff = false;
 
 let mediaRecorder = null;
+
 let recordingChunks = [];
+
 let recording = false;
 
 
@@ -721,11 +1422,13 @@ const RTC_CONFIG = {
   iceServers: [
 
     {
-      urls: "stun:stun.l.google.com:19302"
+      urls:
+        "stun:stun.l.google.com:19302"
     },
 
     {
-      urls: "stun:stun1.l.google.com:19302"
+      urls:
+        "stun:stun1.l.google.com:19302"
     }
 
   ]
@@ -738,22 +1441,35 @@ const RTC_CONFIG = {
    ========================================================= */
 
 function $(id){
+
   return document.getElementById(id);
+
 }
 
 
 function showScreen(id){
 
-  document.querySelectorAll(".screen")
-    .forEach(x => x.classList.remove("active"));
+  document
+    .querySelectorAll(".screen")
+    .forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
 
-  $(id).classList.add("active");
+  $(id)
+    .classList
+    .add("active");
+
 }
 
 
 function initials(name){
 
-  return (name || "?")
+  return (
+    name || "?"
+  )
     .trim()
     .charAt(0)
     .toUpperCase();
@@ -763,32 +1479,49 @@ function initials(name){
 
 function callId(){
 
-  if(window.crypto && crypto.randomUUID)
+  if(
+    window.crypto &&
+    crypto.randomUUID
+  ){
+
     return crypto.randomUUID();
 
-  return Date.now() + "-" +
-    Math.random().toString(36).slice(2);
+  }
+
+  return (
+    Date.now() +
+    "-" +
+    Math.random()
+      .toString(36)
+      .slice(2)
+  );
 
 }
 
 
 function setCallStatus(text){
 
-  $("callStatus").textContent = text;
+  $("callStatus")
+    .textContent =
+    text;
 
 }
 
 
 function showCall(){
 
-  $("callScreen").classList.add("show");
+  $("callScreen")
+    .classList
+    .add("show");
 
 }
 
 
 function hideCall(){
 
-  $("callScreen").classList.remove("show");
+  $("callScreen")
+    .classList
+    .remove("show");
 
 }
 
@@ -800,127 +1533,194 @@ function hideCall(){
 let signupMode = false;
 
 
-$("loginTab").onclick = () => {
+$("loginTab").onclick =
+  () => {
 
-  signupMode = false;
+    signupMode = false;
 
-  $("loginTab").classList.add("active");
-  $("signupTab").classList.remove("active");
+    $("loginTab")
+      .classList
+      .add("active");
 
-  $("authButton").textContent =
-    "تسجيل الدخول";
+    $("signupTab")
+      .classList
+      .remove("active");
 
-};
+    $("authButton")
+      .textContent =
+      "تسجيل الدخول";
 
-
-$("signupTab").onclick = () => {
-
-  signupMode = true;
-
-  $("signupTab").classList.add("active");
-  $("loginTab").classList.remove("active");
-
-  $("authButton").textContent =
-    "إنشاء الحساب";
-
-};
+  };
 
 
-$("authButton").onclick = async () => {
+$("signupTab").onclick =
+  () => {
 
-  const username =
-    $("username").value.trim();
+    signupMode = true;
 
-  const password =
-    $("password").value.trim();
+    $("signupTab")
+      .classList
+      .add("active");
 
-  if(!username || !password){
+    $("loginTab")
+      .classList
+      .remove("active");
 
-    alert("اكتب اسم المستخدم وكلمة المرور");
+    $("authButton")
+      .textContent =
+      "إنشاء الحساب";
 
-    return;
-  }
+  };
 
-  const button = $("authButton");
 
-  button.disabled = true;
+$("authButton").onclick =
+  async () => {
 
-  try{
+    const username =
+      $("username")
+        .value
+        .trim();
 
-    if(signupMode){
+    const password =
+      $("password")
+        .value
+        .trim();
 
-      const {data:exists,error:checkError} =
-        await db
-        .from("profiles")
-        .select("username")
-        .eq("username",username)
-        .maybeSingle();
 
-      if(checkError)
-        throw checkError;
+    if(
+      !username ||
+      !password
+    ){
 
-      if(exists){
+      alert(
+        "اكتب اسم المستخدم وكلمة المرور"
+      );
 
-        alert("اسم المستخدم موجود بالفعل.");
+      return;
 
-        return;
+    }
+
+
+    const button =
+      $("authButton");
+
+
+    button.disabled = true;
+
+
+    try{
+
+      if(signupMode){
+
+        const {
+          data:exists,
+          error:checkError
+        } =
+          await db
+            .from("profiles")
+            .select("username")
+            .eq(
+              "username",
+              username
+            )
+            .maybeSingle();
+
+
+        if(checkError)
+          throw checkError;
+
+
+        if(exists){
+
+          alert(
+            "اسم المستخدم موجود بالفعل."
+          );
+
+          return;
+
+        }
+
+
+        const {error} =
+          await db
+            .from("profiles")
+            .insert([{
+
+              username:
+                username,
+
+              password:
+                password
+
+            }]);
+
+
+        if(error)
+          throw error;
+
+
+        alert(
+          "تم إنشاء الحساب."
+        );
+
       }
 
 
-      const {error} =
+      const {
+        data,
+        error
+      } =
         await db
-        .from("profiles")
-        .insert([{
-          username:username,
-          password:password
-        }]);
+          .from("profiles")
+          .select("*")
+          .eq(
+            "username",
+            username
+          )
+          .eq(
+            "password",
+            password
+          )
+          .maybeSingle();
 
 
       if(error)
         throw error;
 
 
-      alert("تم إنشاء الحساب.");
+      if(!data){
+
+        alert(
+          "اسم المستخدم أو كلمة المرور غير صحيحة."
+        );
+
+        return;
+
+      }
+
+
+      await login(
+        username
+      );
+
+
+    }catch(error){
+
+      console.error(error);
+
+      alert(
+        "حدث خطأ:\n" +
+        error.message
+      );
+
+
+    }finally{
+
+      button.disabled = false;
 
     }
 
-
-    const {data,error} =
-      await db
-      .from("profiles")
-      .select("*")
-      .eq("username",username)
-      .eq("password",password)
-      .maybeSingle();
-
-
-    if(error)
-      throw error;
-
-
-    if(!data){
-
-      alert("اسم المستخدم أو كلمة المرور غير صحيحة.");
-
-      return;
-    }
-
-
-    await login(username);
-
-  }catch(error){
-
-    console.error(error);
-
-    alert("حدث خطأ:\n" + error.message);
-
-  }finally{
-
-    button.disabled = false;
-
-  }
-
-};
+  };
 
 
 /* =========================================================
@@ -929,22 +1729,32 @@ $("authButton").onclick = async () => {
 
 async function login(username){
 
-  me = username;
+  me =
+    username;
+
 
   localStorage.setItem(
     "message_app_user",
     username
   );
 
-  $("currentUserLabel").textContent =
+
+  $("currentUserLabel")
+    .textContent =
     username;
+
 
   await loadFriends();
 
+
   subscribeMessages();
+
   subscribeCalls();
 
-  showScreen("friendsScreen");
+
+  showScreen(
+    "friendsScreen"
+  );
 
 }
 
@@ -953,98 +1763,162 @@ async function login(username){
    AUTO LOGIN
    ========================================================= */
 
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener(
+  "DOMContentLoaded",
+  async () => {
 
-  const saved =
-    localStorage.getItem("message_app_user");
+    const saved =
+      localStorage.getItem(
+        "message_app_user"
+      );
 
-  if(saved){
 
-    me = saved;
+    if(saved){
 
-    $("currentUserLabel").textContent =
-      saved;
+      me =
+        saved;
 
-    await loadFriends();
 
-    subscribeMessages();
-    subscribeCalls();
+      $("currentUserLabel")
+        .textContent =
+        saved;
 
-    showScreen("friendsScreen");
+
+      await loadFriends();
+
+
+      subscribeMessages();
+
+      subscribeCalls();
+
+
+      showScreen(
+        "friendsScreen"
+      );
+
+    }
 
   }
-
-});
+);
 
 
 /* =========================================================
    LOGOUT
    ========================================================= */
 
-$("logoutButton").onclick = async () => {
+$("logoutButton").onclick =
+  async () => {
 
-  await endCall(true);
+    await endCall(true);
 
-  if(messageChannel){
 
-    await db.removeChannel(messageChannel);
+    if(messageChannel){
 
-    messageChannel = null;
-  }
+      try{
 
-  if(callChannel){
+        await db.removeChannel(
+          messageChannel
+        );
 
-    await db.removeChannel(callChannel);
+      }catch(e){}
 
-    callChannel = null;
-  }
 
-  localStorage.removeItem(
-    "message_app_user"
-  );
+      messageChannel =
+        null;
 
-  me = "";
-  currentFriend = "";
-  friends = [];
+    }
 
-  showScreen("loginScreen");
 
-};
+    if(callChannel){
+
+      try{
+
+        await db.removeChannel(
+          callChannel
+        );
+
+      }catch(e){}
+
+
+      callChannel =
+        null;
+
+    }
+
+
+    localStorage.removeItem(
+      "message_app_user"
+    );
+
+
+    me = "";
+
+    currentFriend = "";
+
+    friends = [];
+
+
+    showScreen(
+      "loginScreen"
+    );
+
+  };
 
 
 /* =========================================================
    FRIENDS
    ========================================================= */
 
-$("addFriendButton").onclick = async () => {
+$("addFriendButton").onclick =
+  async () => {
 
-  const name =
-    $("friendInput").value.trim();
+    const name =
+      $("friendInput")
+        .value
+        .trim();
 
-  if(!name){
 
-    alert("اكتب اسم المستخدم.");
+    if(!name){
 
-    return;
-  }
+      alert(
+        "اكتب اسم المستخدم."
+      );
 
-  if(name === me){
+      return;
 
-    alert("لا يمكنك إضافة نفسك.");
+    }
 
-    return;
-  }
 
-  if(!friends.includes(name))
-    friends.push(name);
+    if(name === me){
 
-  $("friendInput").value = "";
+      alert(
+        "لا يمكنك إضافة نفسك."
+      );
 
-  renderFriends();
+      return;
 
-  openChat(name);
+    }
 
-};
+
+    if(
+      !friends.includes(name)
+    ){
+
+      friends.push(name);
+
+    }
+
+
+    $("friendInput")
+      .value = "";
+
+
+    renderFriends();
+
+
+    openChat(name);
+
+  };
 
 
 async function loadFriends(){
@@ -1053,13 +1927,18 @@ async function loadFriends(){
     return;
 
 
-  const {data,error} =
+  const {
+    data,
+    error
+  } =
     await db
-    .from("message")
-    .select("sender,receiver")
-    .or(
-      `sender.eq.${me},receiver.eq.${me}`
-    );
+      .from("message")
+      .select(
+        "sender,receiver"
+      )
+      .or(
+        `sender.eq.${me},receiver.eq.${me}`
+      );
 
 
   if(error){
@@ -1067,31 +1946,36 @@ async function loadFriends(){
     console.error(error);
 
     return;
+
   }
 
 
   friends = [];
 
 
-  (data || []).forEach(message => {
+  (
+    data || []
+  ).forEach(
+    message => {
 
-    const other =
-      message.sender === me
-        ? message.receiver
-        : message.sender;
+      const other =
+        message.sender === me
+          ? message.receiver
+          : message.sender;
 
 
-    if(
-      other &&
-      other !== me &&
-      !friends.includes(other)
-    ){
+      if(
+        other &&
+        other !== me &&
+        !friends.includes(other)
+      ){
 
-      friends.push(other);
+        friends.push(other);
+
+      }
 
     }
-
-  });
+  );
 
 
   renderFriends();
@@ -1104,68 +1988,115 @@ function renderFriends(){
   const list =
     $("friendsList");
 
+
   list.innerHTML = "";
 
 
   if(!friends.length){
 
     list.innerHTML = `
+
       <div class="empty">
-        لا توجد محادثات حالياً.<br>
-        اكتب اسم مستخدم بالأعلى لبدء محادثة.
+
+        لا توجد محادثات حالياً.
+
+        <br>
+
+        اكتب اسم مستخدم بالأعلى
+        لبدء محادثة.
+
       </div>
+
     `;
 
     return;
+
   }
 
 
-  friends.forEach(name => {
+  friends.forEach(
+    name => {
 
-    const row =
-      document.createElement("div");
+      const row =
+        document.createElement(
+          "div"
+        );
 
-    row.className = "friend";
 
-    row.innerHTML = `
+      row.className =
+        "friend";
 
-      <div class="avatar">
-        ${initials(name)}
-      </div>
 
-      <div class="friend-info">
+      row.innerHTML = `
 
-        <div class="friend-name">
-          ${escapeHtml(name)}
+        <div class="avatar">
+
+          ${initials(name)}
+
         </div>
 
-        <div class="friend-sub">
-          اضغط لفتح المحادثة
+        <div class="friend-info">
+
+          <div class="friend-name">
+
+            ${escapeHtml(name)}
+
+          </div>
+
+          <div class="friend-sub">
+
+            اضغط لفتح المحادثة
+
+          </div>
+
         </div>
 
-      </div>
-    `;
+      `;
 
 
-    row.onclick = () =>
-      openChat(name);
+      row.onclick =
+        () =>
+          openChat(name);
 
 
-    list.appendChild(row);
+      list.appendChild(row);
 
-  });
+    }
+  );
 
 }
 
 
 function escapeHtml(value){
 
-  return String(value || "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+  return String(
+    value || ""
+  )
+
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 
 }
 
@@ -1176,49 +2107,70 @@ function escapeHtml(value){
 
 function openChat(friend){
 
-  currentFriend = friend;
-
-  $("chatName").textContent =
+  currentFriend =
     friend;
 
-  $("chatAvatar").textContent =
+
+  $("chatName")
+    .textContent =
+    friend;
+
+
+  $("chatAvatar")
+    .textContent =
     initials(friend);
 
-  showScreen("chatScreen");
+
+  showScreen(
+    "chatScreen"
+  );
+
 
   loadMessages();
 
 }
 
 
-$("backChat").onclick = () => {
+$("backChat").onclick =
+  () => {
 
-  currentFriend = "";
+    currentFriend =
+      "";
 
-  showScreen("friendsScreen");
+    showScreen(
+      "friendsScreen"
+    );
 
-  loadFriends();
+    loadFriends();
 
-};
+  };
 
 
 async function loadMessages(){
 
-  if(!me || !currentFriend)
+  if(
+    !me ||
+    !currentFriend
+  )
     return;
 
 
-  const {data,error} =
+  const {
+    data,
+    error
+  } =
     await db
-    .from("message")
-    .select("*")
-    .or(
-      `and(sender.eq.${me},receiver.eq.${currentFriend}),and(sender.eq.${currentFriend},receiver.eq.${me})`
-    )
-    .order(
-      "created_at",
-      {ascending:true}
-    );
+      .from("message")
+      .select("*")
+      .or(
+        `and(sender.eq.${me},receiver.eq.${currentFriend}),and(sender.eq.${currentFriend},receiver.eq.${me})`
+      )
+      .order(
+        "created_at",
+        {
+          ascending:true
+        }
+      );
 
 
   if(error){
@@ -1226,12 +2178,19 @@ async function loadMessages(){
     console.error(error);
 
     return;
+
   }
 
 
-  $("messages").innerHTML = "";
+  $("messages")
+    .innerHTML = "";
 
-  (data || []).forEach(renderMessage);
+
+  (
+    data || []
+  ).forEach(
+    renderMessage
+  );
 
 }
 
@@ -1240,32 +2199,53 @@ function renderMessage(message){
 
   const isMe =
     message.sender === me &&
-    message.receiver === currentFriend;
+    message.receiver ===
+      currentFriend;
 
 
   const isOther =
-    message.sender === currentFriend &&
+    message.sender ===
+      currentFriend &&
     message.receiver === me;
 
 
-  if(!isMe && !isOther)
+  if(
+    !isMe &&
+    !isOther
+  )
     return;
 
 
   const box =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
+
 
   box.className =
     "message " +
-    (isMe ? "me" : "other");
+    (
+      isMe
+        ? "me"
+        : "other"
+    );
 
 
   if(message.audio_url){
 
     box.innerHTML = `
-      <div>🎙️ رسالة صوتية</div>
-      <audio controls src="${message.audio_url}">
-      </audio>
+
+      <div>
+        🎙️ رسالة صوتية
+      </div>
+
+      <audio
+        controls
+        src="${escapeHtml(
+          message.audio_url
+        )}"
+      ></audio>
+
     `;
 
   }else{
@@ -1276,55 +2256,80 @@ function renderMessage(message){
   }
 
 
-  $("messages").appendChild(box);
+  $("messages")
+    .appendChild(box);
 
-  $("messages").scrollTop =
-    $("messages").scrollHeight;
+
+  $("messages")
+    .scrollTop =
+    $("messages")
+      .scrollHeight;
 
 }
 
 
 $("sendBtn").onclick =
-  () => sendTextMessage();
+  () =>
+    sendTextMessage();
 
 
-$("messageInput").addEventListener(
-  "keydown",
-  e => {
+$("messageInput")
+  .addEventListener(
+    "keydown",
+    e => {
 
-    if(e.key === "Enter")
-      sendTextMessage();
+      if(
+        e.key ===
+        "Enter"
+      ){
 
-  }
-);
+        sendTextMessage();
+
+      }
+
+    }
+  );
 
 
 async function sendTextMessage(){
 
   const text =
-    $("messageInput").value.trim();
+    $("messageInput")
+      .value
+      .trim();
 
-  if(!text || !currentFriend)
+
+  if(
+    !text ||
+    !currentFriend
+  )
     return;
 
 
-  $("messageInput").value = "";
+  $("messageInput")
+    .value = "";
 
 
-  const {error} =
+  const {
+    error
+  } =
     await db
-    .from("message")
-    .insert([{
+      .from("message")
+      .insert([{
 
-      sender:me,
+        sender:
+          me,
 
-      receiver:currentFriend,
+        receiver:
+          currentFriend,
 
-      text:text,
+        text:
+          text,
 
-      audio_url:null
+        audio_url:
+          null
 
-    }]);
+      }]);
 
 
   if(error){
@@ -1353,51 +2358,73 @@ function subscribeMessages(){
 
   if(messageChannel){
 
-    db.removeChannel(messageChannel);
+    try{
+
+      db.removeChannel(
+        messageChannel
+      );
+
+    }catch(e){}
 
   }
 
 
   messageChannel =
     db
-    .channel(
-      "messages-" +
-      me +
-      "-" +
-      Date.now()
-    )
-    .on(
-      "postgres_changes",
-      {
-        event:"INSERT",
-        schema:"public",
-        table:"message"
-      },
-      payload => {
+      .channel(
+        "messages-" +
+        me +
+        "-" +
+        Date.now()
+      )
 
-        const message =
-          payload.new;
+      .on(
+        "postgres_changes",
 
-        const related =
-          (
-            message.sender === me &&
-            message.receiver === currentFriend
-          ) ||
-          (
-            message.sender === currentFriend &&
-            message.receiver === me
-          );
+        {
+          event:
+            "INSERT",
+
+          schema:
+            "public",
+
+          table:
+            "message"
+        },
+
+        payload => {
+
+          const message =
+            payload.new;
 
 
-        if(related)
-          renderMessage(message);
+          const related =
+            (
+              message.sender === me &&
+              message.receiver ===
+                currentFriend
+            ) ||
+
+            (
+              message.sender ===
+                currentFriend &&
+              message.receiver ===
+                me
+            );
 
 
-        loadFriends();
+          if(related)
+            renderMessage(
+              message
+            );
 
-      }
-    )
-    .subscribe();
+
+          loadFriends();
+
+        }
+      )
+
+      .subscribe();
 
 }
 
@@ -1426,27 +2453,45 @@ async function startRecording(){
 
   try{
 
+    if(!currentFriend){
+
+      alert(
+        "افتح محادثة أولاً."
+      );
+
+      return;
+
+    }
+
+
     const stream =
-      await navigator.mediaDevices
-      .getUserMedia({
-        audio:true
-      });
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+          audio:true
+        });
 
 
     recordingChunks = [];
 
 
     mediaRecorder =
-      new MediaRecorder(stream);
+      new MediaRecorder(
+        stream
+      );
 
 
-    mediaRecorder.ondataavailable =
+    mediaRecorder
+      .ondataavailable =
       event => {
 
-        if(event.data.size)
+        if(event.data.size){
+
           recordingChunks.push(
             event.data
           );
+
+        }
 
       };
 
@@ -1457,7 +2502,10 @@ async function startRecording(){
         const blob =
           new Blob(
             recordingChunks,
-            {type:"audio/webm"}
+            {
+              type:
+                "audio/webm"
+            }
           );
 
 
@@ -1468,31 +2516,53 @@ async function startRecording(){
         reader.onloadend =
           async () => {
 
-            await db
-            .from("message")
-            .insert([{
+            const {
+              error
+            } =
+              await db
+                .from("message")
+                .insert([{
 
-              sender:me,
+                  sender:
+                    me,
 
-              receiver:currentFriend,
+                  receiver:
+                    currentFriend,
 
-              text:"🎙️ رسالة صوتية",
+                  text:
+                    "🎙️ رسالة صوتية",
 
-              audio_url:
-                reader.result
+                  audio_url:
+                    reader.result
 
-            }]);
+                }]);
+
+
+            if(error){
+
+              console.error(
+                error
+              );
+
+              alert(
+                "تعذر إرسال الرسالة الصوتية."
+              );
+
+            }
 
           };
 
 
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(
+          blob
+        );
 
 
         stream
           .getTracks()
-          .forEach(track =>
-            track.stop()
+          .forEach(
+            track =>
+              track.stop()
           );
 
       };
@@ -1500,12 +2570,20 @@ async function startRecording(){
 
     mediaRecorder.start();
 
-    recording = true;
+
+    recording =
+      true;
+
 
     $("recordBtn")
-      .classList.add("recording");
+      .classList
+      .add(
+        "recording"
+      );
 
   }catch(error){
+
+    console.error(error);
 
     alert(
       "تعذر الوصول إلى المايكروفون:\n" +
@@ -1521,7 +2599,8 @@ function stopRecording(){
 
   if(
     mediaRecorder &&
-    mediaRecorder.state !== "inactive"
+    mediaRecorder.state !==
+      "inactive"
   ){
 
     mediaRecorder.stop();
@@ -1529,10 +2608,15 @@ function stopRecording(){
   }
 
 
-  recording = false;
+  recording =
+    false;
+
 
   $("recordBtn")
-    .classList.remove("recording");
+    .classList
+    .remove(
+      "recording"
+    );
 
 }
 
@@ -1541,22 +2625,31 @@ function stopRecording(){
    SETTINGS
    ========================================================= */
 
-$("settingsButton").onclick = () => {
+$("settingsButton").onclick =
+  () => {
 
-  $("newUsername").value = me;
+    $("newUsername")
+      .value =
+      me;
 
-  $("newPassword").value = "";
+    $("newPassword")
+      .value = "";
 
-  showScreen("settingsScreen");
+    showScreen(
+      "settingsScreen"
+    );
 
-};
+  };
 
 
-$("settingsBack").onclick = () => {
+$("settingsBack").onclick =
+  () => {
 
-  showScreen("friendsScreen");
+    showScreen(
+      "friendsScreen"
+    );
 
-};
+  };
 
 
 $("permissionButton").onclick =
@@ -1565,17 +2658,22 @@ $("permissionButton").onclick =
     try{
 
       const stream =
-        await navigator.mediaDevices
-        .getUserMedia({
-          audio:true,
-          video:true
-        });
+        await navigator
+          .mediaDevices
+          .getUserMedia({
+
+            audio:true,
+
+            video:true
+
+          });
 
 
       stream
         .getTracks()
-        .forEach(track =>
-          track.stop()
+        .forEach(
+          track =>
+            track.stop()
         );
 
 
@@ -1599,34 +2697,54 @@ $("saveAccount").onclick =
   async () => {
 
     const newName =
-      $("newUsername").value.trim();
+      $("newUsername")
+        .value
+        .trim();
+
 
     const newPassword =
-      $("newPassword").value.trim();
+      $("newPassword")
+        .value
+        .trim();
 
 
     if(!newName){
 
-      alert("اسم المستخدم مطلوب.");
+      alert(
+        "اسم المستخدم مطلوب."
+      );
 
       return;
+
     }
 
 
     const update = {
-      username:newName
+
+      username:
+        newName
+
     };
 
 
-    if(newPassword)
-      update.password = newPassword;
+    if(newPassword){
+
+      update.password =
+        newPassword;
+
+    }
 
 
-    const {error} =
+    const {
+      error
+    } =
       await db
-      .from("profiles")
-      .update(update)
-      .eq("username",me);
+        .from("profiles")
+        .update(update)
+        .eq(
+          "username",
+          me
+        );
 
 
     if(error){
@@ -1637,10 +2755,13 @@ $("saveAccount").onclick =
       );
 
       return;
+
     }
 
 
-    me = newName;
+    me =
+      newName;
+
 
     localStorage.setItem(
       "message_app_user",
@@ -1649,18 +2770,119 @@ $("saveAccount").onclick =
 
 
     $("currentUserLabel")
-      .textContent = me;
+      .textContent =
+      me;
 
 
-    alert("تم حفظ التعديلات.");
+    alert(
+      "تم حفظ التعديلات."
+    );
 
-    showScreen("friendsScreen");
+
+    showScreen(
+      "friendsScreen"
+    );
 
   };
 
 
 /* =========================================================
    CALL SIGNALING
+   SUPABASE call_signals
+   ========================================================= */
+
+
+/*
+  إرسال إشارة إلى جدول call_signals.
+
+  أنواع الإشارات:
+
+  call
+  answer
+  ice
+  hangup
+  declined
+  busy
+*/
+
+async function sendCallSignal(
+
+  target,
+
+  type,
+
+  data,
+
+  room = activeCallId
+
+){
+
+  if(
+    !target ||
+    !me ||
+    !room
+  ){
+
+    return;
+
+  }
+
+
+  const payload = {
+
+    ...data,
+
+    from:
+      me,
+
+    to:
+      target,
+
+    callId:
+      room
+
+  };
+
+
+  const {
+    error
+  } =
+    await db
+      .from("call_signals")
+      .insert({
+
+        room_id:
+          room,
+
+        sender_id:
+          me,
+
+        signal_type:
+          type,
+
+        payload:
+          payload
+
+      });
+
+
+  if(error){
+
+    console.error(
+      "CALL SIGNAL ERROR:",
+      error
+    );
+
+
+    throw error;
+
+  }
+
+}
+
+
+/* =========================================================
+   SUBSCRIBE CALL SIGNALS
    ========================================================= */
 
 function subscribeCalls(){
@@ -1671,183 +2893,170 @@ function subscribeCalls(){
 
   if(callChannel){
 
-    db.removeChannel(callChannel);
+    try{
+
+      db.removeChannel(
+        callChannel
+      );
+
+    }catch(e){}
+
+    callChannel =
+      null;
 
   }
 
 
   callChannel =
     db
-    .channel("calls-" + me)
-    .on(
-      "broadcast",
-      {event:"signal"},
-      ({payload}) => {
+      .channel(
+        "call-signals-" +
+        me +
+        "-" +
+        Date.now()
+      )
 
-        handleSignal(payload);
+      .on(
 
-      }
-    )
-    .subscribe();
+        "postgres_changes",
 
-}
+        {
 
+          event:
+            "INSERT",
 
-/*
-  نرسل الإشارة إلى قناة المستخدم الآخر.
-*/
-async function sendSignal(
-  target,
-  data
-){
+          schema:
+            "public",
 
-  if(!target)
-    return;
+          table:
+            "call_signals"
 
+        },
 
-  const channel =
-    db.channel(
-      "calls-" + target
-    );
+        async payload => {
 
+          try{
 
-  return new Promise(resolve => {
-
-    let finished = false;
+            const row =
+              payload.new;
 
 
-    function finish(){
-
-      if(finished)
-        return;
-
-      finished = true;
-
-      db.removeChannel(channel);
-
-      resolve();
-
-    }
+            if(!row)
+              return;
 
 
-    channel.subscribe(
-      async status => {
-
-        if(status !== "SUBSCRIBED")
-          return;
+            const signal =
+              row.payload ||
+              {};
 
 
-        try{
+            /*
+              نتأكد أن الإشارة
+              موجهة لهذا المستخدم.
+            */
 
-          await channel.send({
+            if(
+              signal.to !== me
+            ){
 
-            type:"broadcast",
+              return;
 
-            event:"signal",
-
-            payload:{
-              ...data,
-              from:me
             }
 
-          });
 
-        }catch(error){
+            /*
+              لا نعالج إشاراتنا
+              نحن.
+            */
 
-          console.error(
-            "Signal error:",
-            error
-          );
+            if(
+              row.sender_id === me
+            ){
+
+              return;
+
+            }
+
+
+            await handleCallSignal(
+              row
+            );
+
+
+          }catch(error){
+
+            console.error(
+              "Signal handling error:",
+              error
+            );
+
+          }
 
         }
 
+      )
 
-        setTimeout(
-          finish,
-          500
-        );
+      .subscribe(
+        status => {
 
-      }
-    );
+          console.log(
+            "Call signaling:",
+            status
+          );
 
-
-    setTimeout(
-      finish,
-      5000
-    );
-
-  });
+        }
+      );
 
 }
 
 
 /* =========================================================
-   SIGNAL HANDLER
+   HANDLE CALL SIGNAL
    ========================================================= */
 
-async function handleSignal(data){
+async function handleCallSignal(row){
 
-  if(!data)
-    return;
-
-
-  if(data.from === me)
-    return;
+  const type =
+    row.signal_type;
 
 
-  switch(data.kind){
+  const data =
+    row.payload || {};
+
+
+  switch(type){
 
     case "call":
-      await incomingCall(data);
+
+      await receiveIncomingCall(
+        data
+      );
+
       break;
 
 
     case "answer":
 
-      if(
-        data.callId !== activeCallId ||
-        !pc
-      )
-        return;
-
-
-      try{
-
-        await pc.setRemoteDescription(
-          new RTCSessionDescription(
-            data.answer
-          )
-        );
-
-
-        await flushIce();
-
-        setCallStatus(
-          "متصل الآن"
-        );
-
-      }catch(error){
-
-        console.error(error);
-
-        await endCall(false);
-
-      }
+      await receiveAnswer(
+        data
+      );
 
       break;
 
 
     case "ice":
 
-      if(
-        data.callId !== activeCallId &&
-        data.callId !== incomingCallId
-      )
-        return;
+      await receiveIce(
+        data
+      );
+
+      break;
 
 
-      await addIce(
-        data.candidate
+    case "hangup":
+
+      await receiveHangup(
+        data
       );
 
       break;
@@ -1855,44 +3064,18 @@ async function handleSignal(data){
 
     case "declined":
 
-      if(data.callId === activeCallId){
-
-        alert(
-          "تم رفض المكالمة."
-        );
-
-        await endCall(false);
-
-      }
+      await receiveDeclined(
+        data
+      );
 
       break;
 
 
     case "busy":
 
-      if(data.callId === activeCallId){
-
-        alert(
-          "الشخص الآخر مشغول."
-        );
-
-        await endCall(false);
-
-      }
-
-      break;
-
-
-    case "hangup":
-
-      if(
-        data.callId === activeCallId ||
-        data.callId === incomingCallId
-      ){
-
-        await endCall(false);
-
-      }
+      await receiveBusy(
+        data
+      );
 
       break;
 
@@ -1905,7 +3088,16 @@ async function handleSignal(data){
    INCOMING CALL
    ========================================================= */
 
-async function incomingCall(data){
+async function receiveIncomingCall(data){
+
+  if(!data.callId)
+    return;
+
+
+  /*
+    إذا عندنا مكالمة حالياً
+    نخبر الطرف الآخر أنه مشغول.
+  */
 
   if(
     activeCallUser ||
@@ -1913,13 +3105,30 @@ async function incomingCall(data){
     incomingCaller
   ){
 
-    await sendSignal(
-      data.from,
-      {
-        kind:"busy",
-        callId:data.callId
-      }
-    );
+    try{
+
+      await sendCallSignal(
+
+        data.from,
+
+        "busy",
+
+        {
+          callId:
+            data.callId
+        },
+
+        data.callId
+
+      );
+
+    }catch(error){
+
+      console.error(
+        error
+      );
+
+    }
 
     return;
 
@@ -1929,11 +3138,14 @@ async function incomingCall(data){
   incomingCaller =
     data.from;
 
+
   incomingCallId =
     data.callId;
 
+
   incomingOffer =
     data.offer;
+
 
   incomingVideo =
     !!data.video;
@@ -1941,7 +3153,9 @@ async function incomingCall(data){
 
   $("incomingAvatar")
     .textContent =
-    initials(incomingCaller);
+    initials(
+      incomingCaller
+    );
 
 
   $("incomingName")
@@ -1951,13 +3165,17 @@ async function incomingCall(data){
 
   $("incomingType")
     .textContent =
-    incomingVideo
-      ? "📹 مكالمة فيديو واردة"
-      : "📞 مكالمة صوتية واردة";
+
+      incomingVideo
+
+        ? "📹 مكالمة فيديو واردة"
+
+        : "📞 مكالمة صوتية واردة";
 
 
   $("incoming")
-    .classList.add("show");
+    .classList
+    .add("show");
 
 }
 
@@ -1967,11 +3185,13 @@ async function incomingCall(data){
    ========================================================= */
 
 $("audioCall").onclick =
-  () => startCall(false);
+  () =>
+    startCall(false);
 
 
 $("videoCall").onclick =
-  () => startCall(true);
+  () =>
+    startCall(true);
 
 
 async function startCall(video){
@@ -1980,13 +3200,17 @@ async function startCall(video){
     return;
 
 
-  if(activeCallUser || pc){
+  if(
+    activeCallUser ||
+    pc
+  ){
 
     alert(
       "لديك مكالمة نشطة بالفعل."
     );
 
     return;
+
   }
 
 
@@ -2000,18 +3224,28 @@ async function startCall(video){
     );
 
     return;
+
   }
 
 
   activeCallUser =
     currentFriend;
 
+
   activeCallId =
     callId();
 
 
-  muted = false;
-  cameraOff = false;
+  muted =
+    false;
+
+
+  cameraOff =
+    false;
+
+
+  pendingIce =
+    [];
 
 
   showCall();
@@ -2019,38 +3253,50 @@ async function startCall(video){
 
   $("callTitle")
     .textContent =
-    video
-      ? "مكالمة فيديو مع " + activeCallUser
-      : "مكالمة صوتية مع " + activeCallUser;
+
+      video
+
+        ? "مكالمة فيديو مع " +
+          activeCallUser
+
+        : "مكالمة صوتية مع " +
+          activeCallUser;
 
 
   setCallStatus(
-    "جاري طلب الاتصال..."
+    "جاري تشغيل الكاميرا والمايكروفون..."
   );
 
 
   try{
 
     localStream =
-      await navigator.mediaDevices
-      .getUserMedia({
+      await navigator
+        .mediaDevices
+        .getUserMedia({
 
-        audio:true,
+          audio:true,
 
-        video:video
+          video:video
 
-      });
+        });
 
 
     createPeerConnection(
+
       activeCallUser,
+
       activeCallId
+
     );
 
 
     setupCallVideos(
+
       localStream,
+
       video
+
     );
 
 
@@ -2063,18 +3309,32 @@ async function startCall(video){
     );
 
 
-    await sendSignal(
+    /*
+      إرسال OFFER
+      إلى جدول call_signals
+    */
+
+    await sendCallSignal(
+
       activeCallUser,
+
+      "call",
+
       {
-        kind:"call",
 
-        callId:activeCallId,
+        callId:
+          activeCallId,
 
-        video:video,
+        video:
+          video,
 
-        offer:offer
+        offer:
+          offer
 
-      }
+      },
+
+      activeCallId
+
     );
 
 
@@ -2085,7 +3345,10 @@ async function startCall(video){
 
   }catch(error){
 
-    console.error(error);
+    console.error(
+      error
+    );
+
 
     alert(
       "تعذر بدء المكالمة:\n" +
@@ -2093,7 +3356,9 @@ async function startCall(video){
     );
 
 
-    await endCall(false);
+    await endCall(
+      false
+    );
 
   }
 
@@ -2101,7 +3366,7 @@ async function startCall(video){
 
 
 /* =========================================================
-   ACCEPT
+   ACCEPT INCOMING CALL
    ========================================================= */
 
 $("acceptCall").onclick =
@@ -2111,7 +3376,8 @@ $("acceptCall").onclick =
 async function acceptIncoming(){
 
   $("incoming")
-    .classList.remove("show");
+    .classList
+    .remove("show");
 
 
   if(
@@ -2123,17 +3389,21 @@ async function acceptIncoming(){
     clearIncoming();
 
     return;
+
   }
 
 
   const caller =
     incomingCaller;
 
+
   const id =
     incomingCallId;
 
+
   const offer =
     incomingOffer;
+
 
   const video =
     incomingVideo;
@@ -2142,6 +3412,7 @@ async function acceptIncoming(){
   activeCallUser =
     caller;
 
+
   activeCallId =
     id;
 
@@ -2149,50 +3420,68 @@ async function acceptIncoming(){
   clearIncoming();
 
 
+  pendingIce =
+    [];
+
+
   showCall();
 
 
   $("callTitle")
     .textContent =
-    video
-      ? "مكالمة فيديو مع " + caller
-      : "مكالمة صوتية مع " + caller;
+
+      video
+
+        ? "مكالمة فيديو مع " +
+          caller
+
+        : "مكالمة صوتية مع " +
+          caller;
 
 
   setCallStatus(
-    "جاري الاتصال..."
+    "جاري تشغيل الكاميرا والمايكروفون..."
   );
 
 
   try{
 
     localStream =
-      await navigator.mediaDevices
-      .getUserMedia({
+      await navigator
+        .mediaDevices
+        .getUserMedia({
 
-        audio:true,
+          audio:true,
 
-        video:video
+          video:video
 
-      });
+        });
 
 
     createPeerConnection(
+
       caller,
+
       id
+
     );
 
 
     setupCallVideos(
+
       localStream,
+
       video
+
     );
 
 
     await pc.setRemoteDescription(
+
       new RTCSessionDescription(
         offer
       )
+
     );
 
 
@@ -2208,16 +3497,29 @@ async function acceptIncoming(){
     );
 
 
-    await sendSignal(
+    /*
+      إرسال ANSWER
+      إلى المتصل.
+    */
+
+    await sendCallSignal(
+
       caller,
+
+      "answer",
+
       {
-        kind:"answer",
 
-        callId:id,
+        callId:
+          id,
 
-        answer:answer
+        answer:
+          answer
 
-      }
+      },
+
+      id
+
     );
 
 
@@ -2228,15 +3530,33 @@ async function acceptIncoming(){
 
   }catch(error){
 
-    console.error(error);
-
-    await sendSignal(
-      caller,
-      {
-        kind:"declined",
-        callId:id
-      }
+    console.error(
+      error
     );
+
+
+    try{
+
+      await sendCallSignal(
+
+        caller,
+
+        "declined",
+
+        {
+          callId:
+            id
+        },
+
+        id
+
+      );
+
+    }catch(e){
+
+      console.error(e);
+
+    }
 
 
     alert(
@@ -2245,12 +3565,18 @@ async function acceptIncoming(){
     );
 
 
-    await endCall(false);
+    await endCall(
+      false
+    );
 
   }
 
 }
 
+
+/* =========================================================
+   REJECT CALL
+   ========================================================= */
 
 $("rejectCall").onclick =
   async () => {
@@ -2258,23 +3584,45 @@ $("rejectCall").onclick =
     const caller =
       incomingCaller;
 
+
     const id =
       incomingCallId;
 
 
     $("incoming")
-      .classList.remove("show");
+      .classList
+      .remove("show");
 
 
-    if(caller && id){
+    if(
+      caller &&
+      id
+    ){
 
-      await sendSignal(
-        caller,
-        {
-          kind:"declined",
-          callId:id
-        }
-      );
+      try{
+
+        await sendCallSignal(
+
+          caller,
+
+          "declined",
+
+          {
+            callId:
+              id
+          },
+
+          id
+
+        );
+
+      }catch(error){
+
+        console.error(
+          error
+        );
+
+      }
 
     }
 
@@ -2284,12 +3632,210 @@ $("rejectCall").onclick =
   };
 
 
+/* =========================================================
+   CLEAR INCOMING
+   ========================================================= */
+
 function clearIncoming(){
 
-  incomingCaller = "";
-  incomingCallId = "";
-  incomingOffer = null;
-  incomingVideo = false;
+  incomingCaller =
+    "";
+
+  incomingCallId =
+    "";
+
+  incomingOffer =
+    null;
+
+  incomingVideo =
+    false;
+
+}
+
+
+/* =========================================================
+   RECEIVE ANSWER
+   ========================================================= */
+
+async function receiveAnswer(data){
+
+  if(
+    !pc ||
+    !activeCallId
+  ){
+
+    return;
+
+  }
+
+
+  if(
+    data.callId !==
+    activeCallId
+  ){
+
+    return;
+
+  }
+
+
+  if(!data.answer)
+    return;
+
+
+  try{
+
+    await pc.setRemoteDescription(
+
+      new RTCSessionDescription(
+        data.answer
+      )
+
+    );
+
+
+    await flushIce();
+
+
+    setCallStatus(
+      "متصل الآن"
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "Answer error:",
+      error
+    );
+
+
+    await endCall(
+      false
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   RECEIVE ICE
+   ========================================================= */
+
+async function receiveIce(data){
+
+  if(
+    !data.candidate
+  ){
+
+    return;
+
+  }
+
+
+  if(
+
+    data.callId !==
+      activeCallId &&
+
+    data.callId !==
+      incomingCallId
+
+  ){
+
+    return;
+
+  }
+
+
+  await addIce(
+    data.candidate
+  );
+
+}
+
+
+/* =========================================================
+   RECEIVE HANGUP
+   ========================================================= */
+
+async function receiveHangup(data){
+
+  if(
+
+    data.callId !==
+      activeCallId &&
+
+    data.callId !==
+      incomingCallId
+
+  ){
+
+    return;
+
+  }
+
+
+  await endCall(
+    false
+  );
+
+}
+
+
+/* =========================================================
+   RECEIVE DECLINED
+   ========================================================= */
+
+async function receiveDeclined(data){
+
+  if(
+    data.callId !==
+    activeCallId
+  ){
+
+    return;
+
+  }
+
+
+  alert(
+    "تم رفض المكالمة."
+  );
+
+
+  await endCall(
+    false
+  );
+
+}
+
+
+/* =========================================================
+   RECEIVE BUSY
+   ========================================================= */
+
+async function receiveBusy(data){
+
+  if(
+    data.callId !==
+    activeCallId
+  ){
+
+    return;
+
+  }
+
+
+  alert(
+    "الشخص الآخر مشغول."
+  );
+
+
+  await endCall(
+    false
+  );
 
 }
 
@@ -2299,14 +3845,19 @@ function clearIncoming(){
    ========================================================= */
 
 function createPeerConnection(
+
   friend,
+
   id
+
 ){
 
   if(pc){
 
     try{
+
       pc.close();
+
     }catch(e){}
 
   }
@@ -2322,32 +3873,61 @@ function createPeerConnection(
     new MediaStream();
 
 
+  /*
+    استقبال فيديو وصوت الطرف الآخر
+  */
+
   pc.ontrack =
     event => {
 
-      if(event.streams[0]){
+      console.log(
+        "Remote track:",
+        event.track.kind
+      );
+
+
+      if(
+        event.streams &&
+        event.streams[0]
+      ){
 
         event.streams[0]
           .getTracks()
-          .forEach(track => {
+          .forEach(
+            track => {
 
-            if(
-              !remoteStream
-              .getTracks()
-              .includes(track)
-            ){
+              if(
+                !remoteStream
+                  .getTracks()
+                  .includes(track)
+              ){
 
-              remoteStream
-                .addTrack(track);
+                remoteStream
+                  .addTrack(
+                    track
+                  );
+
+              }
 
             }
-
-          });
+          );
 
       }else{
 
-        remoteStream
-          .addTrack(event.track);
+        if(
+          !remoteStream
+            .getTracks()
+            .includes(
+              event.track
+            )
+        ){
+
+          remoteStream
+            .addTrack(
+              event.track
+            );
+
+        }
 
       }
 
@@ -2363,35 +3943,77 @@ function createPeerConnection(
         remote.srcObject =
           remoteStream;
 
+
         remote.play()
-          .catch(()=>{});
+          .catch(
+            error => {
+
+              console.warn(
+                "Remote play:",
+                error
+              );
+
+            }
+          );
 
       }
 
     };
 
 
+  /*
+    إرسال ICE
+  */
+
   pc.onicecandidate =
-    event => {
+    async event => {
 
-      if(event.candidate){
+      if(
+        !event.candidate
+      ){
 
-        sendSignal(
+        return;
+
+      }
+
+
+      try{
+
+        await sendCallSignal(
+
           friend,
-          {
-            kind:"ice",
 
-            callId:id,
+          "ice",
+
+          {
+
+            callId:
+              id,
 
             candidate:
               event.candidate
-          }
+
+          },
+
+          id
+
+        );
+
+      }catch(error){
+
+        console.error(
+          "ICE send error:",
+          error
         );
 
       }
 
     };
 
+
+  /*
+    حالة WebRTC
+  */
 
   pc.onconnectionstatechange =
     () => {
@@ -2404,7 +4026,16 @@ function createPeerConnection(
         pc.connectionState;
 
 
-      if(state === "connected"){
+      console.log(
+        "WebRTC state:",
+        state
+      );
+
+
+      if(
+        state ===
+        "connected"
+      ){
 
         setCallStatus(
           "متصل الآن"
@@ -2413,7 +4044,19 @@ function createPeerConnection(
       }
 
       else if(
-        state === "disconnected"
+        state ===
+        "connecting"
+      ){
+
+        setCallStatus(
+          "جاري الاتصال..."
+        );
+
+      }
+
+      else if(
+        state ===
+        "disconnected"
       ){
 
         setCallStatus(
@@ -2423,7 +4066,8 @@ function createPeerConnection(
       }
 
       else if(
-        state === "failed"
+        state ===
+        "failed"
       ){
 
         setCallStatus(
@@ -2432,21 +4076,41 @@ function createPeerConnection(
 
       }
 
+      else if(
+        state ===
+        "closed"
+      ){
+
+        setCallStatus(
+          "انتهت المكالمة"
+        );
+
+      }
+
     };
 
+
+  /*
+    إضافة صوت وفيديو المستخدم
+  */
 
   if(localStream){
 
     localStream
       .getTracks()
-      .forEach(track => {
+      .forEach(
+        track => {
 
-        pc.addTrack(
-          track,
-          localStream
-        );
+          pc.addTrack(
 
-      });
+            track,
+
+            localStream
+
+          );
+
+        }
+      );
 
   }
 
@@ -2463,10 +4127,19 @@ async function addIce(candidate){
     return;
 
 
+  /*
+    إذا لم يصل Remote Description
+    نخزن ICE مؤقتاً.
+  */
+
   if(
+
     !pc ||
+
     !pc.remoteDescription ||
+
     !pc.remoteDescription.type
+
   ){
 
     pendingIce.push(
@@ -2481,9 +4154,11 @@ async function addIce(candidate){
   try{
 
     await pc.addIceCandidate(
+
       new RTCIceCandidate(
         candidate
       )
+
     );
 
   }catch(error){
@@ -2498,21 +4173,33 @@ async function addIce(candidate){
 }
 
 
+/* =========================================================
+   FLUSH ICE
+   ========================================================= */
+
 async function flushIce(){
 
   if(
+
     !pc ||
+
     !pc.remoteDescription ||
+
     !pc.remoteDescription.type
-  )
+
+  ){
+
     return;
+
+  }
 
 
   const list =
     pendingIce;
 
 
-  pendingIce = [];
+  pendingIce =
+    [];
 
 
   for(
@@ -2522,14 +4209,19 @@ async function flushIce(){
     try{
 
       await pc.addIceCandidate(
+
         new RTCIceCandidate(
           candidate
         )
+
       );
 
     }catch(error){
 
-      console.warn(error);
+      console.warn(
+        "ICE error:",
+        error
+      );
 
     }
 
@@ -2543,41 +4235,90 @@ async function flushIce(){
    ========================================================= */
 
 function setupCallVideos(
+
   stream,
+
   video
+
 ){
 
   const stage =
     $("callStage");
 
 
-  stage.innerHTML = "";
+  stage.innerHTML =
+    "";
 
+
+  /*
+    الفيديو الكبير:
+    الطرف الآخر
+  */
 
   const remote =
-    document.createElement("video");
+    document.createElement(
+      "video"
+    );
 
-  remote.className = "remote";
 
-  remote.autoplay = true;
+  remote.className =
+    "remote";
 
-  remote.playsInline = true;
 
+  remote.autoplay =
+    true;
+
+
+  remote.playsInline =
+    true;
+
+
+  remote.setAttribute(
+    "playsinline",
+    ""
+  );
+
+
+  /*
+    الفيديو الصغير:
+    المستخدم نفسه
+  */
 
   const local =
-    document.createElement("video");
+    document.createElement(
+      "video"
+    );
 
-  local.className = "local";
 
-  local.autoplay = true;
+  local.className =
+    "local";
 
-  local.muted = true;
 
-  local.playsInline = true;
+  local.autoplay =
+    true;
+
+
+  local.playsInline =
+    true;
+
+
+  local.muted =
+    true;
+
+
+  local.setAttribute(
+    "playsinline",
+    ""
+  );
+
 
   local.srcObject =
     stream;
 
+
+  /*
+    صوت فقط
+  */
 
   if(!video){
 
@@ -2586,22 +4327,44 @@ function setupCallVideos(
 
 
     const label =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
+
 
     label.className =
       "audio-label";
 
+
     label.textContent =
       "📞 مكالمة صوتية";
 
-    stage.appendChild(label);
+
+    stage.appendChild(
+      label
+    );
 
   }
 
 
-  stage.appendChild(remote);
+  stage.appendChild(
+    remote
+  );
 
-  stage.appendChild(local);
+
+  stage.appendChild(
+    local
+  );
+
+
+  /*
+    محاولة تشغيل الفيديو المحلي
+  */
+
+  local.play()
+    .catch(
+      () => {}
+    );
 
 }
 
@@ -2619,7 +4382,7 @@ $("muteBtn").onclick =
 
     const tracks =
       localStream
-      .getAudioTracks();
+        .getAudioTracks();
 
 
     if(!tracks.length)
@@ -2631,9 +4394,12 @@ $("muteBtn").onclick =
 
 
     tracks.forEach(
-      track =>
+      track => {
+
         track.enabled =
-          !muted
+          !muted;
+
+      }
     );
 
 
@@ -2659,7 +4425,7 @@ $("cameraBtn").onclick =
 
     const tracks =
       localStream
-      .getVideoTracks();
+        .getVideoTracks();
 
 
     if(!tracks.length)
@@ -2671,9 +4437,12 @@ $("cameraBtn").onclick =
 
 
     tracks.forEach(
-      track =>
+      track => {
+
         track.enabled =
-          !cameraOff
+          !cameraOff;
+
+      }
     );
 
 
@@ -2691,34 +4460,68 @@ $("cameraBtn").onclick =
    ========================================================= */
 
 $("hangupBtn").onclick =
-  () => endCall(true);
+  () =>
+    endCall(true);
 
 
-async function endCall(sendSignalToOther){
+async function endCall(
+  sendSignalToOther
+){
 
   const user =
     activeCallUser;
+
 
   const id =
     activeCallId;
 
 
+  /*
+    إخبار الطرف الآخر
+  */
+
   if(
+
     sendSignalToOther &&
+
     user &&
+
     id
+
   ){
 
-    await sendSignal(
-      user,
-      {
-        kind:"hangup",
-        callId:id
-      }
-    );
+    try{
+
+      await sendCallSignal(
+
+        user,
+
+        "hangup",
+
+        {
+          callId:
+            id
+        },
+
+        id
+
+      );
+
+    }catch(error){
+
+      console.error(
+        "Hangup signal error:",
+        error
+      );
+
+    }
 
   }
 
+
+  /*
+    إيقاف الكاميرا والمايك
+  */
 
   if(localStream){
 
@@ -2729,32 +4532,69 @@ async function endCall(sendSignalToOther){
           track.stop()
       );
 
-    localStream = null;
+
+    localStream =
+      null;
 
   }
 
+
+  /*
+    إغلاق WebRTC
+  */
 
   if(pc){
 
     try{
+
+      pc.ontrack =
+        null;
+
+      pc.onicecandidate =
+        null;
+
+      pc.onconnectionstatechange =
+        null;
+
       pc.close();
+
     }catch(e){}
 
-    pc = null;
+
+    pc =
+      null;
 
   }
 
 
-  remoteStream = null;
-
-  pendingIce = [];
-
-
-  activeCallUser = "";
-  activeCallId = "";
+  remoteStream =
+    null;
 
 
-  $("callStage").innerHTML = "";
+  pendingIce =
+    [];
+
+
+  activeCallUser =
+    "";
+
+
+  activeCallId =
+    "";
+
+
+  muted =
+    false;
+
+
+  cameraOff =
+    false;
+
+
+  $("callStage")
+    .innerHTML =
+    "";
+
 
   hideCall();
 
@@ -2784,7 +4624,9 @@ window.addEventListener(
     if(pc){
 
       try{
+
         pc.close();
+
       }catch(e){}
 
     }
@@ -2809,20 +4651,37 @@ window.addEventListener(
   }
 );
 
+
 window.onerror =
-  (message,source,line) => {
+  (
+    message,
+    source,
+    line,
+    column,
+    error
+  ) => {
 
     console.error(
+
       message,
+
       source,
-      line
+
+      line,
+
+      column,
+
+      error
+
     );
 
     return false;
 
   };
 
+
 </script>
 
 </body>
+
 </html>
