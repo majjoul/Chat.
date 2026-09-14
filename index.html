@@ -13,7 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Daily.co (بديل Jitsi - بدون أي تسجيل دخول للمستخدمين) -->
-<script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
+<script crossorigin src="https://unpkg.com/@daily-co/daily-js@0.66.0"></script>
 
 <style>
 
@@ -3553,8 +3553,37 @@ function openDailyCall(
 
 
   /*
-   * إنشاء إطار المكالمة
+   * مهلة قصيرة قبل إنشاء الإطار حتى يستقر الـ DOM
+   * (يقلل من خلل معروف بمكتبة Daily يسبب خطأ postMessage عشوائي)
    */
+
+  setTimeout(
+    function(){
+
+      startDailyFrame(
+        container,
+        friend,
+        withVideo,
+        0
+      );
+
+    },
+    120
+  );
+
+}
+
+
+/* =========================================================
+   START DAILY FRAME (مع إعادة محاولة تلقائية مرة واحدة)
+========================================================= */
+
+function startDailyFrame(
+  container,
+  friend,
+  withVideo,
+  attempt
+){
 
   try{
 
@@ -3679,9 +3708,51 @@ function openDailyCall(
   }catch(error){
 
     console.error(
-      'Daily initialization error:',
+      'Daily initialization error (attempt ' +
+      attempt +
+      '):',
       error
     );
+
+
+    /*
+     * محاولة ثانية تلقائية قبل إزعاج المستخدم بتنبيه
+     * (هذا خلل معروف بمكتبة Daily يحدث أحياناً بشكل عشوائي)
+     */
+
+    if(attempt < 1){
+
+      if(dailyCallFrame){
+
+        try{
+
+          dailyCallFrame.destroy();
+
+        }catch(e){}
+
+        dailyCallFrame =
+          null;
+
+      }
+
+
+      setTimeout(
+        function(){
+
+          startDailyFrame(
+            container,
+            friend,
+            withVideo,
+            attempt + 1
+          );
+
+        },
+        400
+      );
+
+      return;
+
+    }
 
 
     alert(
