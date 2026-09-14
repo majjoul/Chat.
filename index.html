@@ -2788,94 +2788,43 @@ $("saveAccount").onclick =
 
 /* =========================================================
    CALL SIGNALING
-   SUPABASE call_signals
    ========================================================= */
 
-
-/*
-  إرسال إشارة إلى جدول call_signals.
-
-  أنواع الإشارات:
-
-  call
-  answer
-  ice
-  hangup
-  declined
-  busy
-*/
-
 async function sendCallSignal(
-
   target,
-
   type,
-
   data,
-
   room = activeCallId
-
 ){
 
-  if(
-    !target ||
-    !me ||
-    !room
-  ){
-
+  if(!target || !me || !room){
     return;
-
   }
 
-
   const payload = {
-
     ...data,
-
-    from:
-      me,
-
-    to:
-      target,
-
-    callId:
-      room
-
+    from: me,
+    to: target,
+    callId: room
   };
 
-
-  const {
-    error
-  } =
+  const { error } =
     await db
       .from("call_signals")
       .insert({
-
-        room_id:
-          room,
-
-        sender_id:
-          me,
-
-        signal_type:
-          type,
-
-        payload:
-          payload
-
+        room_id: room,
+        sender_id: me,
+        signal_type: type,
+        payload: payload
       });
 
-
   if(error){
-
     console.error(
       "CALL SIGNAL ERROR:",
       error
     );
 
-
     throw error;
-
   }
 
 }
@@ -2901,6 +2850,7 @@ function subscribeCalls(){
 
     }catch(e){}
 
+
     callChannel =
       null;
 
@@ -2917,20 +2867,14 @@ function subscribeCalls(){
       )
 
       .on(
-
         "postgres_changes",
-
         {
-
           event:
             "INSERT",
-
           schema:
             "public",
-
           table:
             "call_signals"
-
         },
 
         async payload => {
@@ -2950,11 +2894,6 @@ function subscribeCalls(){
               {};
 
 
-            /*
-              نتأكد أن الإشارة
-              موجهة لهذا المستخدم.
-            */
-
             if(
               signal.to !== me
             ){
@@ -2963,11 +2902,6 @@ function subscribeCalls(){
 
             }
 
-
-            /*
-              لا نعالج إشاراتنا
-              نحن.
-            */
 
             if(
               row.sender_id === me
@@ -3094,11 +3028,6 @@ async function receiveIncomingCall(data){
     return;
 
 
-  /*
-    إذا عندنا مكالمة حالياً
-    نخبر الطرف الآخر أنه مشغول.
-  */
-
   if(
     activeCallUser ||
     pc ||
@@ -3108,18 +3037,13 @@ async function receiveIncomingCall(data){
     try{
 
       await sendCallSignal(
-
         data.from,
-
         "busy",
-
         {
           callId:
             data.callId
         },
-
         data.callId
-
       );
 
     }catch(error){
@@ -3283,20 +3207,14 @@ async function startCall(video){
 
 
     createPeerConnection(
-
       activeCallUser,
-
       activeCallId
-
     );
 
 
     setupCallVideos(
-
       localStream,
-
       video
-
     );
 
 
@@ -3309,19 +3227,10 @@ async function startCall(video){
     );
 
 
-    /*
-      إرسال OFFER
-      إلى جدول call_signals
-    */
-
     await sendCallSignal(
-
       activeCallUser,
-
       "call",
-
       {
-
         callId:
           activeCallId,
 
@@ -3330,11 +3239,8 @@ async function startCall(video){
 
         offer:
           offer
-
       },
-
       activeCallId
-
     );
 
 
@@ -3459,31 +3365,32 @@ async function acceptIncoming(){
 
 
     createPeerConnection(
-
       caller,
-
       id
-
     );
 
 
     setupCallVideos(
-
       localStream,
-
       video
-
     );
 
 
     await pc.setRemoteDescription(
-
       new RTCSessionDescription(
         offer
       )
-
     );
 
+    console.log(
+      "Remote offer set successfully"
+    );
+
+
+    /*
+      الآن بعد وضع الـ offer
+      نستطيع إضافة ICE الذي وصل مسبقاً.
+    */
 
     await flushIce();
 
@@ -3497,29 +3404,17 @@ async function acceptIncoming(){
     );
 
 
-    /*
-      إرسال ANSWER
-      إلى المتصل.
-    */
-
     await sendCallSignal(
-
       caller,
-
       "answer",
-
       {
-
         callId:
           id,
 
         answer:
-          answer
-
+          pc.localDescription
       },
-
       id
-
     );
 
 
@@ -3538,23 +3433,20 @@ async function acceptIncoming(){
     try{
 
       await sendCallSignal(
-
         caller,
-
         "declined",
-
         {
           callId:
             id
         },
-
         id
-
       );
 
     }catch(e){
 
-      console.error(e);
+      console.error(
+        e
+      );
 
     }
 
@@ -3602,18 +3494,13 @@ $("rejectCall").onclick =
       try{
 
         await sendCallSignal(
-
           caller,
-
           "declined",
-
           {
             callId:
               id
           },
-
           id
-
         );
 
       }catch(error){
@@ -3659,48 +3546,39 @@ function clearIncoming(){
 
 async function receiveAnswer(data){
 
-  if(
-    !pc ||
-    !activeCallId
-  ){
-
+  if(!pc){
     return;
-
   }
 
-
-  if(
-    data.callId !==
-    activeCallId
-  ){
-
+  if(!activeCallId){
     return;
-
   }
 
-
-  if(!data.answer)
+  if(data.callId !== activeCallId){
     return;
+  }
 
+  if(!data.answer){
+    return;
+  }
 
   try{
 
     await pc.setRemoteDescription(
-
       new RTCSessionDescription(
         data.answer
       )
-
     );
 
+    console.log(
+      "Remote answer set successfully"
+    );
 
     await flushIce();
-
 
     setCallStatus(
       "متصل الآن"
     );
-
 
   }catch(error){
 
@@ -3709,9 +3587,8 @@ async function receiveAnswer(data){
       error
     );
 
-
-    await endCall(
-      false
+    setCallStatus(
+      "فشل استقبال الرد"
     );
 
   }
@@ -3725,33 +3602,100 @@ async function receiveAnswer(data){
 
 async function receiveIce(data){
 
+  if(!data){
+    return;
+  }
+
+  if(!data.candidate){
+    return;
+  }
+
+  const signalCallId =
+    data.callId;
+
+  if(!signalCallId){
+    return;
+  }
+
+  /*
+    لا نقبل ICE من مكالمة قديمة
+  */
+
   if(
-    !data.candidate
+    signalCallId !== activeCallId &&
+    signalCallId !== incomingCallId
   ){
+
+    console.log(
+      "Ignoring ICE from another call:",
+      signalCallId
+    );
 
     return;
 
   }
 
+  /*
+    إذا لم يتم إنشاء PeerConnection
+    بعد، خزنه مؤقتاً.
+  */
 
-  if(
+  if(!pc){
 
-    data.callId !==
-      activeCallId &&
+    pendingIce.push(
+      data.candidate
+    );
 
-    data.callId !==
-      incomingCallId
-
-  ){
+    console.log(
+      "ICE queued: no PeerConnection"
+    );
 
     return;
 
   }
 
+  /*
+    إذا لم يصل Remote Description
+    بعد، خزنه مؤقتاً.
+  */
 
-  await addIce(
-    data.candidate
-  );
+  if(
+    !pc.remoteDescription ||
+    !pc.remoteDescription.type
+  ){
+
+    pendingIce.push(
+      data.candidate
+    );
+
+    console.log(
+      "ICE queued: waiting for remote description"
+    );
+
+    return;
+
+  }
+
+  try{
+
+    await pc.addIceCandidate(
+      new RTCIceCandidate(
+        data.candidate
+      )
+    );
+
+    console.log(
+      "ICE candidate added"
+    );
+
+  }catch(error){
+
+    console.error(
+      "ICE add error:",
+      error
+    );
+
+  }
 
 }
 
@@ -3763,13 +3707,8 @@ async function receiveIce(data){
 async function receiveHangup(data){
 
   if(
-
-    data.callId !==
-      activeCallId &&
-
-    data.callId !==
-      incomingCallId
-
+    data.callId !== activeCallId &&
+    data.callId !== incomingCallId
   ){
 
     return;
@@ -3845,11 +3784,8 @@ async function receiveBusy(data){
    ========================================================= */
 
 function createPeerConnection(
-
   friend,
-
   id
-
 ){
 
   if(pc){
@@ -3881,7 +3817,7 @@ function createPeerConnection(
     event => {
 
       console.log(
-        "Remote track:",
+        "REMOTE TRACK:",
         event.track.kind
       );
 
@@ -3902,10 +3838,9 @@ function createPeerConnection(
                   .includes(track)
               ){
 
-                remoteStream
-                  .addTrack(
-                    track
-                  );
+                remoteStream.addTrack(
+                  track
+                );
 
               }
 
@@ -3922,10 +3857,9 @@ function createPeerConnection(
             )
         ){
 
-          remoteStream
-            .addTrack(
-              event.track
-            );
+          remoteStream.addTrack(
+            event.track
+          );
 
         }
 
@@ -3968,35 +3902,40 @@ function createPeerConnection(
   pc.onicecandidate =
     async event => {
 
-      if(
-        !event.candidate
-      ){
-
+      if(!event.candidate){
         return;
-
       }
-
 
       try{
 
+        const candidate =
+          event.candidate.toJSON
+            ? event.candidate.toJSON()
+            : {
+                candidate:
+                  event.candidate.candidate,
+
+                sdpMid:
+                  event.candidate.sdpMid,
+
+                sdpMLineIndex:
+                  event.candidate.sdpMLineIndex,
+
+                usernameFragment:
+                  event.candidate.usernameFragment
+              };
+
         await sendCallSignal(
-
           friend,
-
           "ice",
-
           {
-
             callId:
               id,
 
             candidate:
-              event.candidate
-
+              candidate
           },
-
           id
-
         );
 
       }catch(error){
@@ -4102,71 +4041,12 @@ function createPeerConnection(
         track => {
 
           pc.addTrack(
-
             track,
-
             localStream
-
           );
 
         }
       );
-
-  }
-
-}
-
-
-/* =========================================================
-   ICE
-   ========================================================= */
-
-async function addIce(candidate){
-
-  if(!candidate)
-    return;
-
-
-  /*
-    إذا لم يصل Remote Description
-    نخزن ICE مؤقتاً.
-  */
-
-  if(
-
-    !pc ||
-
-    !pc.remoteDescription ||
-
-    !pc.remoteDescription.type
-
-  ){
-
-    pendingIce.push(
-      candidate
-    );
-
-    return;
-
-  }
-
-
-  try{
-
-    await pc.addIceCandidate(
-
-      new RTCIceCandidate(
-        candidate
-      )
-
-    );
-
-  }catch(error){
-
-    console.warn(
-      "ICE error:",
-      error
-    );
 
   }
 
@@ -4179,28 +4059,30 @@ async function addIce(candidate){
 
 async function flushIce(){
 
-  if(
-
-    !pc ||
-
-    !pc.remoteDescription ||
-
-    !pc.remoteDescription.type
-
-  ){
-
+  if(!pc){
     return;
-
   }
 
+  if(
+    !pc.remoteDescription ||
+    !pc.remoteDescription.type
+  ){
+    return;
+  }
+
+  if(!pendingIce.length){
+    return;
+  }
 
   const list =
-    pendingIce;
+    [...pendingIce];
 
+  pendingIce = [];
 
-  pendingIce =
-    [];
-
+  console.log(
+    "Flushing ICE:",
+    list.length
+  );
 
   for(
     const candidate of list
@@ -4209,17 +4091,19 @@ async function flushIce(){
     try{
 
       await pc.addIceCandidate(
-
         new RTCIceCandidate(
           candidate
         )
+      );
 
+      console.log(
+        "Queued ICE added"
       );
 
     }catch(error){
 
       console.warn(
-        "ICE error:",
+        "Queued ICE error:",
         error
       );
 
@@ -4235,11 +4119,8 @@ async function flushIce(){
    ========================================================= */
 
 function setupCallVideos(
-
   stream,
-
   video
-
 ){
 
   const stage =
@@ -4481,30 +4362,21 @@ async function endCall(
   */
 
   if(
-
     sendSignalToOther &&
-
     user &&
-
     id
-
   ){
 
     try{
 
       await sendCallSignal(
-
         user,
-
         "hangup",
-
         {
           callId:
             id
         },
-
         id
-
       );
 
     }catch(error){
@@ -4662,17 +4534,11 @@ window.onerror =
   ) => {
 
     console.error(
-
       message,
-
       source,
-
       line,
-
       column,
-
       error
-
     );
 
     return false;
@@ -4684,4 +4550,4 @@ window.onerror =
 
 </body>
 
-</html>
+  </html>
