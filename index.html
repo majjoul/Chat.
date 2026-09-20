@@ -1088,19 +1088,19 @@ input:focus{
     <div class="card">
 
       <h3>
-        🎙️ أذونات المكالمات
+        🎙️ أذونات المكالمات والإشعارات
       </h3>
 
       <p>
         اضغط الزر للسماح للمتصفح باستخدام
-        الكاميرا والمايكروفون.
+        الكاميرا والمايكروفون وتفعيل إشعارات الخلفية.
       </p>
 
       <button
         id="permissionButton"
         class="primary"
       >
-        السماح بالكاميرا والمايكروفون
+        تفعيل الأذونات والإشعارات
       </button>
 
     </div>
@@ -1527,6 +1527,70 @@ function hideCall(){
 
 
 /* =========================================================
+   PUSH NOTIFICATIONS HELPER
+   ========================================================= */
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function registerPushNotifications(userId) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      return;
+    }
+
+    // تسجيل ملف sw.js الحقيقي من المستودع
+    const registration = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+
+    const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+    const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedKey
+    });
+
+    const p256dhKey = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh'))));
+    const authKey = btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))));
+
+    // حفظ أو تحديث بيانات الاشتراك في جدول push_subscriptions
+    await db
+      .from('push_subscriptions')
+      .upsert([
+        {
+          user_id: userId,
+          endpoint: subscription.endpoint,
+          p256dh: p256dhKey,
+          auth: authKey
+        }
+      ], { onConflict: 'user_id' });
+
+    console.log('Push service worker registered successfully.');
+  } catch (error) {
+    console.error('Push registration error:', error);
+  }
+}
+
+
+/* =========================================================
    LOGIN / SIGNUP
    ========================================================= */
 
@@ -1751,6 +1815,9 @@ async function login(username){
 
   subscribeCalls();
 
+  // تفعيل وإرسال بيانات الإشعارات للمتصفح تلقائياً عند الدخول
+  registerPushNotifications(username);
+
 
   showScreen(
     "friendsScreen"
@@ -1790,6 +1857,8 @@ window.addEventListener(
       subscribeMessages();
 
       subscribeCalls();
+
+      registerPushNotifications(saved);
 
 
       showScreen(
@@ -2676,9 +2745,12 @@ $("permissionButton").onclick =
             track.stop()
         );
 
+      // تفعيل إشعارات الـ Push أيضاً
+      await registerPushNotifications(me);
+
 
       alert(
-        "تم السماح بالكاميرا والمايكروفون."
+        "تم السماح بالكاميرا والمايكروفون والإشعارات بنجاح."
       );
 
     }catch(error){
@@ -3387,11 +3459,6 @@ async function acceptIncoming(){
     );
 
 
-    /*
-      الآن بعد وضع الـ offer
-      نستطيع إضافة ICE الذي وصل مسبقاً.
-    */
-
     await flushIce();
 
 
@@ -3617,10 +3684,6 @@ async function receiveIce(data){
     return;
   }
 
-  /*
-    لا نقبل ICE من مكالمة قديمة
-  */
-
   if(
     signalCallId !== activeCallId &&
     signalCallId !== incomingCallId
@@ -3635,11 +3698,6 @@ async function receiveIce(data){
 
   }
 
-  /*
-    إذا لم يتم إنشاء PeerConnection
-    بعد، خزنه مؤقتاً.
-  */
-
   if(!pc){
 
     pendingIce.push(
@@ -3653,11 +3711,6 @@ async function receiveIce(data){
     return;
 
   }
-
-  /*
-    إذا لم يصل Remote Description
-    بعد، خزنه مؤقتاً.
-  */
 
   if(
     !pc.remoteDescription ||
@@ -3809,10 +3862,6 @@ function createPeerConnection(
     new MediaStream();
 
 
-  /*
-    استقبال فيديو وصوت الطرف الآخر
-  */
-
   pc.ontrack =
     event => {
 
@@ -3895,10 +3944,6 @@ function createPeerConnection(
     };
 
 
-  /*
-    إرسال ICE
-  */
-
   pc.onicecandidate =
     async event => {
 
@@ -3949,10 +3994,6 @@ function createPeerConnection(
 
     };
 
-
-  /*
-    حالة WebRTC
-  */
 
   pc.onconnectionstatechange =
     () => {
@@ -4028,10 +4069,6 @@ function createPeerConnection(
 
     };
 
-
-  /*
-    إضافة صوت وفيديو المستخدم
-  */
 
   if(localStream){
 
@@ -4131,11 +4168,6 @@ function setupCallVideos(
     "";
 
 
-  /*
-    الفيديو الكبير:
-    الطرف الآخر
-  */
-
   const remote =
     document.createElement(
       "video"
@@ -4159,11 +4191,6 @@ function setupCallVideos(
     ""
   );
 
-
-  /*
-    الفيديو الصغير:
-    المستخدم نفسه
-  */
 
   const local =
     document.createElement(
@@ -4196,10 +4223,6 @@ function setupCallVideos(
   local.srcObject =
     stream;
 
-
-  /*
-    صوت فقط
-  */
 
   if(!video){
 
@@ -4237,10 +4260,6 @@ function setupCallVideos(
     local
   );
 
-
-  /*
-    محاولة تشغيل الفيديو المحلي
-  */
 
   local.play()
     .catch(
@@ -4357,10 +4376,6 @@ async function endCall(
     activeCallId;
 
 
-  /*
-    إخبار الطرف الآخر
-  */
-
   if(
     sendSignalToOther &&
     user &&
@@ -4391,10 +4406,6 @@ async function endCall(
   }
 
 
-  /*
-    إيقاف الكاميرا والمايك
-  */
-
   if(localStream){
 
     localStream
@@ -4410,10 +4421,6 @@ async function endCall(
 
   }
 
-
-  /*
-    إغلاق WebRTC
-  */
 
   if(pc){
 
@@ -4550,4 +4557,4 @@ window.onerror =
 
 </body>
 
-   </html>
+</html>
