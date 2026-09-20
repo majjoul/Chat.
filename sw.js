@@ -1,131 +1,71 @@
-// =========================================================
-// Message App - Service Worker
-// =========================================================
-
-const CACHE_NAME = "message-app-v1";
-
-
-// =========================================================
-// INSTALL
-// =========================================================
-
 self.addEventListener("install", event => {
-
-  console.log("Service Worker installed");
-
   self.skipWaiting();
-
 });
 
-
-// =========================================================
-// ACTIVATE
-// =========================================================
-
 self.addEventListener("activate", event => {
-
-  console.log("Service Worker activated");
-
   event.waitUntil(
     self.clients.claim()
   );
-
 });
 
 
-// =========================================================
-// PUSH NOTIFICATION
-// =========================================================
+/* =========================
+   استقبال الإشعارات
+========================= */
 
 self.addEventListener("push", event => {
 
   let data = {};
 
   try {
-
     data = event.data
       ? event.data.json()
       : {};
-
-  } catch (error) {
-
-    console.error(
-      "Push data error:",
-      error
-    );
-
-    data = {
-      title: "Message App",
-      body: "لديك إشعار جديد."
-    };
-
+  } catch (e) {
+    console.error("Push data error:", e);
   }
 
-
   const title =
-    data.title ||
-    "Message App";
-
+    data.title || "مكالمة واردة";
 
   const options = {
-
     body:
       data.body ||
-      "لديك إشعار جديد.",
-
+      "لديك مكالمة واردة",
     icon:
       data.icon ||
-      "./icon.png",
-
+      "/icon.png",
     badge:
       data.badge ||
-      "./icon.png",
-
-    tag:
-      data.tag ||
-      "message-app",
-
-    renotify: true,
-
-    data: {
-
-      url:
-        data.url ||
-        "./index.html",
-
-      type:
-        data.type ||
-        "message",
-
-      sender:
-        data.sender ||
-        "",
-
-      callId:
-        data.callId ||
-        ""
-
-    }
-
+      "/icon.png",
+    data: data,
+    requireInteraction: true,
+    actions: [
+      {
+        action: "accept-call",
+        title: "قبول"
+      },
+      {
+        action: "reject-call",
+        title: "رفض"
+      }
+    ]
   };
 
-
   event.waitUntil(
-
     self.registration
       .showNotification(
         title,
         options
       )
-
   );
 
 });
 
 
-// =========================================================
-// NOTIFICATION CLICK
-// =========================================================
+/* =========================
+   الضغط على الإشعار
+========================= */
 
 self.addEventListener(
   "notificationclick",
@@ -133,101 +73,46 @@ self.addEventListener(
 
     event.notification.close();
 
-
     const data =
-      event.notification.data ||
-      {};
-
-
-    const url =
-      data.url ||
-      "./index.html";
-
+      event.notification.data || {};
 
     event.waitUntil(
-
-      clients
+      self.clients
         .matchAll({
           type: "window",
           includeUncontrolled: true
         })
+        .then(clients => {
 
-        .then(
-          clientList => {
+          for (const client of clients) {
 
-            /*
-              إذا كان التطبيق مفتوحًا،
-              نحاول إحضار نافذته للمقدمة.
-            */
+            if ("focus" in client) {
 
-            for(
-              const client of clientList
-            ){
+              client.postMessage({
+                type:
+                  "incoming-call",
+                action:
+                  event.action,
+                ...data
+              });
 
-              if(
-                "focus" in client
-              ){
-
-                return client
-                  .focus();
-
-              }
-
-            }
-
-
-            /*
-              إذا لم يكن مفتوحًا،
-              نفتح التطبيق.
-            */
-
-            if(
-              clients.openWindow
-            ){
-
-              return clients
-                .openWindow(url);
-
+              return client.focus();
             }
 
           }
-        )
 
+          if (
+            self.clients.openWindow
+          ) {
+
+            return self.clients.openWindow(
+              "./"
+            );
+
+          }
+
+        })
     );
-
-  }
-);
-
-
-// =========================================================
-// NOTIFICATION CLOSE
-// =========================================================
-
-self.addEventListener(
-  "notificationclose",
-  event => {
-
-    console.log(
-      "Notification closed"
-    );
-
-  }
-);
-
-
-// =========================================================
-// FETCH
-// =========================================================
-
-self.addEventListener(
-  "fetch",
-  event => {
-
-    /*
-      لا نتدخل في طلبات التطبيق.
-      نخلي GitHub Pages والمتصفح
-      يتعاملون معها بشكل طبيعي.
-    */
 
   }
 );
