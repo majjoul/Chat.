@@ -1,118 +1,47 @@
-self.addEventListener("install", event => {
-  self.skipWaiting();
-});
+// Service Worker للتعامل مع الإشعارات والمكالمات في الخلفية
 
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    self.clients.claim()
-  );
-});
-
-
-/* =========================
-   استقبال الإشعارات
-========================= */
-
-self.addEventListener("push", event => {
-
-  let data = {};
-
-  try {
-    data = event.data
-      ? event.data.json()
-      : {};
-  } catch (e) {
-    console.error("Push data error:", e);
+self.addEventListener('push', function(event) {
+  let data = { title: 'Message App', body: 'لديك اتصال أو رسالة جديدة 📞' };
+  
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
   }
 
-  const title =
-    data.title || "مكالمة واردة";
-
   const options = {
-    body:
-      data.body ||
-      "لديك مكالمة واردة",
-    icon:
-      data.icon ||
-      "/icon.png",
-    badge:
-      data.badge ||
-      "/icon.png",
-    data: data,
-    requireInteraction: true,
+    body: data.body,
+    icon: '💬',
+    badge: '💬',
+    vibrate: [300, 100, 300, 100, 300],
+    tag: 'call-notification',
+    renotify: true,
     actions: [
-      {
-        action: "accept-call",
-        title: "قبول"
-      },
-      {
-        action: "reject-call",
-        title: "رفض"
-      }
+      { action: 'open', title: 'فتح التطبيق' }
     ]
   };
 
   event.waitUntil(
-    self.registration
-      .showNotification(
-        title,
-        options
-      )
+    self.registration.showNotification(data.title, options)
   );
-
 });
 
-
-/* =========================
-   الضغط على الإشعار
-========================= */
-
-self.addEventListener(
-  "notificationclick",
-  event => {
-
-    event.notification.close();
-
-    const data =
-      event.notification.data || {};
-
-    event.waitUntil(
-      self.clients
-        .matchAll({
-          type: "window",
-          includeUncontrolled: true
-        })
-        .then(clients => {
-
-          for (const client of clients) {
-
-            if ("focus" in client) {
-
-              client.postMessage({
-                type:
-                  "incoming-call",
-                action:
-                  event.action,
-                ...data
-              });
-
-              return client.focus();
-            }
-
-          }
-
-          if (
-            self.clients.openWindow
-          ) {
-
-            return self.clients.openWindow(
-              "./"
-            );
-
-          }
-
-        })
-    );
-
-  }
-);
+// التعامل مع الضغط على الإشعار لفتح التطبيق مباشرة
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
+    })
+  );
+});
