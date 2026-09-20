@@ -2,17 +2,9 @@
    SUPABASE
    ========================================================= */
 
-const SUPABASE_URL =
-  "https://roqpinipcgwqeqqfpcjm.supabase.co";
-
-const SUPABASE_KEY =
-  "sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK";
-
-const db =
-  supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+const SUPABASE_URL = "https://roqpinipcgwqeqqfpcjm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_BHglXdT_SHbruwO_mluYOQ_DG6twygK";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 /* =========================================================
@@ -21,85 +13,32 @@ const db =
 
 let pushRegistration = null;
 
-
 async function registerPushServiceWorker(){
-
-  if(
-    !("serviceWorker" in navigator)
-  ){
-
-    console.warn(
-      "Service Worker غير مدعوم."
-    );
-
+  if(!("serviceWorker" in navigator)){
+    console.warn("Service Worker غير مدعوم.");
     return null;
   }
-
 
   try{
+    pushRegistration = await navigator.serviceWorker.register("./sw.js", {
+      scope: "./"
+    });
 
-    pushRegistration =
-      await navigator
-        .serviceWorker
-        .register(
-          "./sw.js",
-          {
-            scope: "./"
-          }
-        );
+    console.log("Service Worker registered:", pushRegistration);
 
-
-    console.log(
-      "Service Worker registered:",
-      pushRegistration
-    );
-
-
-    /*
-     * انتظار أن يصبح Service Worker جاهزًا
-     */
-
-    await navigator
-      .serviceWorker
-      .ready;
-
-
-    console.log(
-      "Service Worker is ready."
-    );
-
+    await navigator.serviceWorker.ready;
+    console.log("Service Worker is ready.");
 
     return pushRegistration;
-
-
   }catch(error){
-
-    console.error(
-      "Service Worker registration error:",
-      error
-    );
-
+    console.error("Service Worker registration error:", error);
     return null;
   }
-
 }
 
-
-/*
- * تسجيل Service Worker عند فتح الموقع
- *
- * هذا لا يطلب إذن الإشعارات.
- * فقط يقوم بتسجيل sw.js.
- */
-
-window.addEventListener(
-  "load",
-  () => {
-
-    registerPushServiceWorker();
-
-  }
-);
+window.addEventListener("load", () => {
+  registerPushServiceWorker();
+});
 
 
 /* =========================================================
@@ -107,45 +46,25 @@ window.addEventListener(
    ========================================================= */
 
 let me = "";
-
 let currentFriend = "";
-
 let friends = [];
-
 let messageChannel = null;
-
 let callChannel = null;
-
 let pc = null;
-
 let localStream = null;
-
 let remoteStream = null;
-
 let activeCallId = "";
-
 let activeCallUser = "";
-
 let incomingCallId = "";
-
 let incomingCaller = "";
-
 let incomingOffer = null;
-
 let incomingVideo = false;
-
 let pendingIce = [];
-
 let muted = false;
-
 let cameraOff = false;
-
 let mediaRecorder = null;
-
 let recordingChunks = [];
-
 let recording = false;
-
 let ringInterval = null;
 
 
@@ -154,116 +73,44 @@ let ringInterval = null;
    ========================================================= */
 
 function startRingtone(){
-
   try{
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) return;
 
-    const AudioContext =
-      window.AudioContext ||
-      window.webkitAudioContext;
+    const ctx = new AudioContext();
 
+    ringInterval = setInterval(() => {
+      if(ctx.state === "suspended"){
+        ctx.resume();
+      }
 
-    if(!AudioContext)
-      return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.setValueAtTime(480, ctx.currentTime + 0.2);
 
-    const ctx =
-      new AudioContext();
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
 
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    ringInterval =
-      setInterval(
-        () => {
-
-          if(
-            ctx.state ===
-            "suspended"
-          ){
-
-            ctx.resume();
-
-          }
-
-
-          const osc =
-            ctx.createOscillator();
-
-
-          const gain =
-            ctx.createGain();
-
-
-          osc.type =
-            "sine";
-
-
-          osc.frequency.setValueAtTime(
-            440,
-            ctx.currentTime
-          );
-
-
-          osc.frequency.setValueAtTime(
-            480,
-            ctx.currentTime + 0.2
-          );
-
-
-          gain.gain.setValueAtTime(
-            0.1,
-            ctx.currentTime
-          );
-
-
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            ctx.currentTime + 0.4
-          );
-
-
-          osc.connect(gain);
-
-          gain.connect(
-            ctx.destination
-          );
-
-
-          osc.start();
-
-          osc.stop(
-            ctx.currentTime + 0.4
-          );
-
-
-        },
-        1000
-      );
-
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    }, 1000);
 
   }catch(e){
-
-    console.log(
-      "Ringtone error:",
-      e
-    );
-
+    console.log("Ringtone error:", e);
   }
-
 }
 
-
 function stopRingtone(){
-
   if(ringInterval){
-
-    clearInterval(
-      ringInterval
-    );
-
-    ringInterval =
-      null;
-
+    clearInterval(ringInterval);
+    ringInterval = null;
   }
-
 }
 
 
@@ -272,21 +119,10 @@ function stopRingtone(){
    ========================================================= */
 
 const RTC_CONFIG = {
-
   iceServers: [
-
-    {
-      urls:
-        "stun:stun.l.google.com:19302"
-    },
-
-    {
-      urls:
-        "stun:stun1.l.google.com:19302"
-    }
-
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" }
   ]
-
 };
 
 
@@ -295,90 +131,35 @@ const RTC_CONFIG = {
    ========================================================= */
 
 function $(id){
-
   return document.getElementById(id);
-
 }
-
 
 function showScreen(id){
-
-  document
-    .querySelectorAll(".screen")
-    .forEach(
-      x =>
-        x.classList.remove(
-          "active"
-        )
-    );
-
-
-  $(id)
-    .classList
-    .add("active");
-
+  document.querySelectorAll(".screen").forEach(x => x.classList.remove("active"));
+  $(id).classList.add("active");
 }
-
 
 function initials(name){
-
-  return (
-    name || "?"
-  )
-    .trim()
-    .charAt(0)
-    .toUpperCase();
-
+  return (name || "?").trim().charAt(0).toUpperCase();
 }
-
 
 function callId(){
-
-  if(
-    window.crypto &&
-    crypto.randomUUID
-  ){
-
+  if(window.crypto && crypto.randomUUID){
     return crypto.randomUUID();
-
   }
-
-
-  return (
-    Date.now() +
-    "-" +
-    Math.random()
-      .toString(36)
-      .slice(2)
-  );
-
+  return Date.now() + "-" + Math.random().toString(36).slice(2);
 }
-
 
 function setCallStatus(text){
-
-  $("callStatus")
-    .textContent =
-    text;
-
+  $("callStatus").textContent = text;
 }
-
 
 function showCall(){
-
-  $("callScreen")
-    .classList
-    .add("show");
-
+  $("callScreen").classList.add("show");
 }
 
-
 function hideCall(){
-
-  $("callScreen")
-    .classList
-    .remove("show");
-
+  $("callScreen").classList.remove("show");
 }
 
 
@@ -388,205 +169,78 @@ function hideCall(){
 
 let signupMode = false;
 
+$("loginTab").onclick = () => {
+  signupMode = false;
+  $("loginTab").classList.add("active");
+  $("signupTab").classList.remove("active");
+  $("authButton").textContent = "تسجيل الدخول";
+};
 
-$("loginTab").onclick =
-  () => {
+$("signupTab").onclick = () => {
+  signupMode = true;
+  $("signupTab").classList.add("active");
+  $("loginTab").classList.remove("active");
+  $("authButton").textContent = "إنشاء الحساب";
+};
 
-    signupMode = false;
+$("authButton").onclick = async () => {
+  const username = $("username").value.trim();
+  const password = $("password").value.trim();
 
+  if(!username || !password){
+    alert("اكتب اسم المستخدم وكلمة المرور");
+    return;
+  }
 
-    $("loginTab")
-      .classList
-      .add("active");
+  const button = $("authButton");
+  button.disabled = true;
 
+  try{
+    if(signupMode){
+      const { data: exists, error: checkError } = await db
+        .from("profiles")
+        .select("username")
+        .eq("username", username)
+        .maybeSingle();
 
-    $("signupTab")
-      .classList
-      .remove("active");
+      if(checkError) throw checkError;
 
-
-    $("authButton")
-      .textContent =
-      "تسجيل الدخول";
-
-  };
-
-
-$("signupTab").onclick =
-  () => {
-
-    signupMode = true;
-
-
-    $("signupTab")
-      .classList
-      .add("active");
-
-
-    $("loginTab")
-      .classList
-      .remove("active");
-
-
-    $("authButton")
-      .textContent =
-      "إنشاء الحساب";
-
-  };
-
-
-$("authButton").onclick =
-  async () => {
-
-    const username =
-      $("username")
-        .value
-        .trim();
-
-
-    const password =
-      $("password")
-        .value
-        .trim();
-
-
-    if(
-      !username ||
-      !password
-    ){
-
-      alert(
-        "اكتب اسم المستخدم وكلمة المرور"
-      );
-
-      return;
-
-    }
-
-
-    const button =
-      $("authButton");
-
-
-    button.disabled =
-      true;
-
-
-    try{
-
-      if(signupMode){
-
-        const {
-          data: exists,
-          error: checkError
-        } =
-          await db
-            .from("profiles")
-            .select("username")
-            .eq(
-              "username",
-              username
-            )
-            .maybeSingle();
-
-
-        if(checkError)
-          throw checkError;
-
-
-        if(exists){
-
-          alert(
-            "اسم المستخدم موجود بالفعل."
-          );
-
-          return;
-
-        }
-
-
-        const { error } =
-          await db
-            .from("profiles")
-            .insert([{
-
-              username:
-                username,
-
-              password:
-                password
-
-            }]);
-
-
-        if(error)
-          throw error;
-
-
-        alert(
-          "تم إنشاء الحساب."
-        );
-
-      }
-
-
-      const {
-        data,
-        error
-      } =
-        await db
-          .from("profiles")
-          .select("*")
-          .eq(
-            "username",
-            username
-          )
-          .eq(
-            "password",
-            password
-          )
-          .maybeSingle();
-
-
-      if(error)
-        throw error;
-
-
-      if(!data){
-
-        alert(
-          "اسم المستخدم أو كلمة المرور غير صحيحة."
-        );
-
+      if(exists){
+        alert("اسم المستخدم موجود بالفعل.");
         return;
-
       }
 
+      const { error } = await db
+        .from("profiles")
+        .insert([{ username: username, password: password }]);
 
-      await login(
-        username
-      );
-
-
-    }catch(error){
-
-      console.error(error);
-
-
-      alert(
-        "حدث خطأ:\n" +
-        error.message
-      );
-
-
-    }finally{
-
-      button.disabled =
-        false;
-
+      if(error) throw error;
+      alert("تم إنشاء الحساب.");
     }
 
-  };
+    const { data, error } = await db
+      .from("profiles")
+      .select("*")
+      .eq("username", username)
+      .eq("password", password)
+      .maybeSingle();
+
+    if(error) throw error;
+
+    if(!data){
+      alert("اسم المستخدم أو كلمة المرور غير صحيحة.");
+      return;
+    }
+
+    await login(username);
+
+  }catch(error){
+    console.error(error);
+    alert("حدث خطأ:\n" + error.message);
+  }finally{
+    button.disabled = false;
+  }
+};
 
 
 /* =========================================================
@@ -594,41 +248,16 @@ $("authButton").onclick =
    ========================================================= */
 
 async function login(username){
-
-  me =
-    username;
-
-
-  localStorage.setItem(
-    "message_app_user",
-    username
-  );
-
-
-  $("currentUserLabel")
-    .textContent =
-    username;
-
-
-  /*
-   * تسجيل Service Worker
-   */
+  me = username;
+  localStorage.setItem("message_app_user", username);
+  $("currentUserLabel").textContent = username;
 
   await registerPushServiceWorker();
-
-
   await loadFriends();
-
-
   subscribeMessages();
-
   subscribeCalls();
 
-
-  showScreen(
-    "friendsScreen"
-  );
-
+  showScreen("friendsScreen");
 }
 
 
@@ -636,348 +265,138 @@ async function login(username){
    AUTO LOGIN
    ========================================================= */
 
-window.addEventListener(
-  "DOMContentLoaded",
-  async () => {
+window.addEventListener("DOMContentLoaded", async () => {
+  const saved = localStorage.getItem("message_app_user");
 
-    const saved =
-      localStorage.getItem(
-        "message_app_user"
-      );
+  await registerPushServiceWorker();
 
+  if(saved){
+    me = saved;
+    $("currentUserLabel").textContent = saved;
 
-    /*
-     * تأكد من تسجيل Service Worker
-     * حتى لو كان المستخدم مسجل دخول تلقائيًا.
-     */
+    await loadFriends();
+    subscribeMessages();
+    subscribeCalls();
 
-    await registerPushServiceWorker();
-
-
-    if(saved){
-
-      me =
-        saved;
-
-
-      $("currentUserLabel")
-        .textContent =
-        saved;
-
-
-      await loadFriends();
-
-
-      subscribeMessages();
-
-      subscribeCalls();
-
-
-      showScreen(
-        "friendsScreen"
-      );
-
-    }
-
+    showScreen("friendsScreen");
   }
-);
+});
 
 
 /* =========================================================
    LOGOUT
    ========================================================= */
 
-$("logoutButton").onclick =
-  async () => {
+$("logoutButton").onclick = async () => {
+  await endCall(true);
 
-    await endCall(true);
+  if(messageChannel){
+    try{ await db.removeChannel(messageChannel); }catch(e){}
+    messageChannel = null;
+  }
 
+  if(callChannel){
+    try{ await db.removeChannel(callChannel); }catch(e){}
+    callChannel = null;
+  }
 
-    if(messageChannel){
+  localStorage.removeItem("message_app_user");
+  me = "";
+  currentFriend = "";
+  friends = [];
 
-      try{
-
-        await db.removeChannel(
-          messageChannel
-        );
-
-      }catch(e){}
-
-
-      messageChannel =
-        null;
-
-    }
-
-
-    if(callChannel){
-
-      try{
-
-        await db.removeChannel(
-          callChannel
-        );
-
-      }catch(e){}
-
-
-      callChannel =
-        null;
-
-    }
-
-
-    localStorage.removeItem(
-      "message_app_user"
-    );
-
-
-    me = "";
-
-    currentFriend = "";
-
-    friends = [];
-
-
-    showScreen(
-      "loginScreen"
-    );
-
-  };
+  showScreen("loginScreen");
+};
 
 
 /* =========================================================
    FRIENDS
    ========================================================= */
 
-$("addFriendButton").onclick =
-  async () => {
+$("addFriendButton").onclick = async () => {
+  const name = $("friendInput").value.trim();
 
-    const name =
-      $("friendInput")
-        .value
-        .trim();
-
-
-    if(!name){
-
-      alert(
-        "اكتب اسم المستخدم."
-      );
-
-      return;
-
-    }
-
-
-    if(name === me){
-
-      alert(
-        "لا يمكنك إضافة نفسك."
-      );
-
-      return;
-
-    }
-
-
-    if(
-      !friends.includes(name)
-    ){
-
-      friends.push(name);
-
-    }
-
-
-    $("friendInput")
-      .value = "";
-
-
-    renderFriends();
-
-
-    openChat(name);
-
-  };
-
-
-async function loadFriends(){
-
-  if(!me)
+  if(!name){
+    alert("اكتب اسم المستخدم.");
     return;
-
-
-  const {
-    data,
-    error
-  } =
-    await db
-      .from("message")
-      .select(
-        "sender,receiver"
-      )
-      .or(
-        `sender.eq.${me},receiver.eq.${me}`
-      );
-
-
-  if(error){
-
-    console.error(error);
-
-    return;
-
   }
 
+  if(name === me){
+    alert("لا يمكنك إضافة نفسك.");
+    return;
+  }
+
+  if(!friends.includes(name)){
+    friends.push(name);
+  }
+
+  $("friendInput").value = "";
+  renderFriends();
+  openChat(name);
+};
+
+async function loadFriends(){
+  if(!me) return;
+
+  const { data, error } = await db
+    .from("message")
+    .select("sender,receiver")
+    .or(`sender.eq.${me},receiver.eq.${me}`);
+
+  if(error){
+    console.error(error);
+    return;
+  }
 
   friends = [];
 
-
-  (
-    data || []
-  ).forEach(
-    message => {
-
-      const other =
-        message.sender === me
-          ? message.receiver
-          : message.sender;
-
-
-      if(
-        other &&
-        other !== me &&
-        !friends.includes(other)
-      ){
-
-        friends.push(
-          other
-        );
-
-      }
-
+  (data || []).forEach(message => {
+    const other = message.sender === me ? message.receiver : message.sender;
+    if(other && other !== me && !friends.includes(other)){
+      friends.push(other);
     }
-  );
-
+  });
 
   renderFriends();
-
 }
-
 
 function renderFriends(){
-
-  const list =
-    $("friendsList");
-
-
+  const list = $("friendsList");
   list.innerHTML = "";
 
-
   if(!friends.length){
-
     list.innerHTML = `
-
       <div class="empty">
-
         لا توجد محادثات حالياً.
-
         <br>
-
-        اكتب اسم مستخدم بالأعلى
-        لبدء محادثة.
-
+        اكتب اسم مستخدم بالأعلى لبدء محادثة.
       </div>
-
     `;
-
     return;
-
   }
 
-
-  friends.forEach(
-    name => {
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-
-      row.className =
-        "friend";
-
-
-      row.innerHTML = `
-
-        <div class="avatar">
-
-          ${initials(name)}
-
-        </div>
-
-        <div class="friend-info">
-
-          <div class="friend-name">
-
-            ${escapeHtml(name)}
-
-          </div>
-
-          <div class="friend-sub">
-
-            اضغط لفتح المحادثة
-
-          </div>
-
-        </div>
-
-      `;
-
-
-      row.onclick =
-        () =>
-          openChat(name);
-
-
-      list.appendChild(
-        row
-      );
-
-    }
-  );
-
+  friends.forEach(name => {
+    const row = document.createElement("div");
+    row.className = "friend";
+    row.innerHTML = `
+      <div class="avatar">${initials(name)}</div>
+      <div class="friend-info">
+        <div class="friend-name">${escapeHtml(name)}</div>
+        <div class="friend-sub">اضغط لفتح المحادثة</div>
+      </div>
+    `;
+    row.onclick = () => openChat(name);
+    list.appendChild(row);
+  });
 }
 
-
 function escapeHtml(value){
-
-  return String(
-    value || ""
-  )
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 
@@ -986,249 +405,86 @@ function escapeHtml(value){
    ========================================================= */
 
 function openChat(friend){
-
-  currentFriend =
-    friend;
-
-
-  $("chatName")
-    .textContent =
-    friend;
-
-
-  $("chatAvatar")
-    .textContent =
-    initials(friend);
-
-
-  showScreen(
-    "chatScreen"
-  );
-
-
+  currentFriend = friend;
+  $("chatName").textContent = friend;
+  $("chatAvatar").textContent = initials(friend);
+  showScreen("chatScreen");
   loadMessages();
-
 }
 
-
-$("backChat").onclick =
-  () => {
-
-    currentFriend =
-      "";
-
-
-    showScreen(
-      "friendsScreen"
-    );
-
-
-    loadFriends();
-
-  };
-
+$("backChat").onclick = () => {
+  currentFriend = "";
+  showScreen("friendsScreen");
+  loadFriends();
+};
 
 async function loadMessages(){
+  if(!me || !currentFriend) return;
 
-  if(
-    !me ||
-    !currentFriend
-  )
-    return;
-
-
-  const {
-    data,
-    error
-  } =
-    await db
-      .from("message")
-      .select("*")
-      .or(
-        `and(sender.eq.${me},receiver.eq.${currentFriend}),and(sender.eq.${currentFriend},receiver.eq.${me})`
-      )
-      .order(
-        "created_at",
-        {
-          ascending:
-            true
-        }
-      );
-
+  const { data, error } = await db
+    .from("message")
+    .select("*")
+    .or(`and(sender.eq.${me},receiver.eq.${currentFriend}),and(sender.eq.${currentFriend},receiver.eq.${me})`)
+    .order("created_at", { ascending: true });
 
   if(error){
-
     console.error(error);
-
     return;
-
   }
 
-
-  $("messages")
-    .innerHTML = "";
-
-
-  (
-    data || []
-  ).forEach(
-    renderMessage
-  );
-
+  $("messages").innerHTML = "";
+  (data || []).forEach(renderMessage);
 }
-
 
 function renderMessage(message){
+  const isMe = message.sender === me && message.receiver === currentFriend;
+  const isOther = message.sender === currentFriend && message.receiver === me;
 
-  const isMe =
-    message.sender === me &&
-    message.receiver ===
-      currentFriend;
+  if(!isMe && !isOther) return;
 
-
-  const isOther =
-    message.sender ===
-      currentFriend &&
-    message.receiver === me;
-
-
-  if(
-    !isMe &&
-    !isOther
-  )
-    return;
-
-
-  const box =
-    document.createElement(
-      "div"
-    );
-
-
-  box.className =
-    "message " +
-    (
-      isMe
-        ? "me"
-        : "other"
-    );
-
+  const box = document.createElement("div");
+  box.className = "message " + (isMe ? "me" : "other");
 
   if(message.audio_url){
-
     box.innerHTML = `
-
-      <div>
-        🎙️ رسالة صوتية
-      </div>
-
-      <audio
-        controls
-        src="${escapeHtml(
-          message.audio_url
-        )}"
-      ></audio>
-
+      <div>🎙️ رسالة صوتية</div>
+      <audio controls src="${escapeHtml(message.audio_url)}"></audio>
     `;
-
-  }else{
-
-    box.textContent =
-      message.text || "";
-
+  } else {
+    box.textContent = message.text || "";
   }
 
-
-  $("messages")
-    .appendChild(
-      box
-    );
-
-
-  $("messages")
-    .scrollTop =
-    $("messages")
-      .scrollHeight;
-
+  $("messages").appendChild(box);
+  $("messages").scrollTop = $("messages").scrollHeight;
 }
 
+$("sendBtn").onclick = () => sendTextMessage();
 
-$("sendBtn").onclick =
-  () =>
+$("messageInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){
     sendTextMessage();
-
-
-$("messageInput")
-  .addEventListener(
-    "keydown",
-    e => {
-
-      if(
-        e.key ===
-        "Enter"
-      ){
-
-        sendTextMessage();
-
-      }
-
-    }
-  );
-
+  }
+});
 
 async function sendTextMessage(){
+  const text = $("messageInput").value.trim();
+  if(!text || !currentFriend) return;
 
-  const text =
-    $("messageInput")
-      .value
-      .trim();
+  $("messageInput").value = "";
 
-
-  if(
-    !text ||
-    !currentFriend
-  )
-    return;
-
-
-  $("messageInput")
-    .value = "";
-
-
-  const {
-    error
-  } =
-    await db
-      .from("message")
-      .insert([{
-
-        sender:
-          me,
-
-        receiver:
-          currentFriend,
-
-        text:
-          text,
-
-        audio_url:
-          null
-
-      }]);
-
+  const { error } = await db
+    .from("message")
+    .insert([{
+      sender: me,
+      receiver: currentFriend,
+      text: text,
+      audio_url: null
+    }]);
 
   if(error){
-
     console.error(error);
-
-
-    alert(
-      "تعذر إرسال الرسالة:\n" +
-      error.message
-    );
-
+    alert("تعذر إرسال الرسالة:\n" + error.message);
   }
-
 }
 
 
@@ -1237,83 +493,30 @@ async function sendTextMessage(){
    ========================================================= */
 
 function subscribeMessages(){
-
-  if(!me)
-    return;
-
+  if(!me) return;
 
   if(messageChannel){
-
-    try{
-
-      db.removeChannel(
-        messageChannel
-      );
-
-    }catch(e){}
-
+    try{ db.removeChannel(messageChannel); }catch(e){}
   }
 
+  messageChannel = db
+    .channel("messages-" + me + "-" + Date.now())
+    .on("postgres_changes", {
+      event: "INSERT",
+      schema: "public",
+      table: "message"
+    }, payload => {
+      const message = payload.new;
+      const related =
+        (message.sender === me && message.receiver === currentFriend) ||
+        (message.sender === currentFriend && message.receiver === me);
 
-  messageChannel =
-    db
-      .channel(
-        "messages-" +
-        me +
-        "-" +
-        Date.now()
-      )
-      .on(
-        "postgres_changes",
-        {
-
-          event:
-            "INSERT",
-
-          schema:
-            "public",
-
-          table:
-            "message"
-
-        },
-
-        payload => {
-
-          const message =
-            payload.new;
-
-
-          const related =
-            (
-              message.sender === me &&
-              message.receiver ===
-                currentFriend
-            ) ||
-            (
-              message.sender ===
-                currentFriend &&
-              message.receiver ===
-                me
-            );
-
-
-          if(related){
-
-            renderMessage(
-              message
-            );
-
-          }
-
-
-          loadFriends();
-
-        }
-
-      )
-      .subscribe();
-
+      if(related){
+        renderMessage(message);
+      }
+      loadFriends();
+    })
+    .subscribe();
 }
 
 
@@ -1321,195 +524,71 @@ function subscribeMessages(){
    VOICE MESSAGES
    ========================================================= */
 
-$("recordBtn").onclick =
-  async () => {
-
-    if(recording){
-
-      stopRecording();
-
-    }else{
-
-      startRecording();
-
-    }
-
-  };
-
+$("recordBtn").onclick = async () => {
+  if(recording){
+    stopRecording();
+  }else{
+    startRecording();
+  }
+};
 
 async function startRecording(){
-
   try{
-
     if(!currentFriend){
-
-      alert(
-        "افتح محادثة أولاً."
-      );
-
+      alert("افتح محادثة أولاً.");
       return;
-
     }
 
-
-    const stream =
-      await navigator
-        .mediaDevices
-        .getUserMedia({
-          audio:
-            true
-        });
-
-
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     recordingChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
 
+    mediaRecorder.ondataavailable = event => {
+      if(event.data.size){
+        recordingChunks.push(event.data);
+      }
+    };
 
-    mediaRecorder =
-      new MediaRecorder(
-        stream
-      );
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(recordingChunks, { type: "audio/webm" });
+      const reader = new FileReader();
 
+      reader.onloadend = async () => {
+        const { error } = await db
+          .from("message")
+          .insert([{
+            sender: me,
+            receiver: currentFriend,
+            text: "🎙️ رسالة صوتية",
+            audio_url: reader.result
+          }]);
 
-    mediaRecorder
-      .ondataavailable =
-      event => {
-
-        if(event.data.size){
-
-          recordingChunks.push(
-            event.data
-          );
-
+        if(error){
+          console.error(error);
+          alert("تعذر إرسال الرسالة الصوتية.");
         }
-
       };
 
-
-    mediaRecorder.onstop =
-      async () => {
-
-        const blob =
-          new Blob(
-            recordingChunks,
-            {
-              type:
-                "audio/webm"
-            }
-          );
-
-
-        const reader =
-          new FileReader();
-
-
-        reader.onloadend =
-          async () => {
-
-            const {
-              error
-            } =
-              await db
-                .from("message")
-                .insert([{
-
-                  sender:
-                    me,
-
-                  receiver:
-                    currentFriend,
-
-                  text:
-                    "🎙️ رسالة صوتية",
-
-                  audio_url:
-                    reader.result
-
-                }]);
-
-
-            if(error){
-
-              console.error(
-                error
-              );
-
-
-              alert(
-                "تعذر إرسال الرسالة الصوتية."
-              );
-
-            }
-
-          };
-
-
-        reader.readAsDataURL(
-          blob
-        );
-
-
-        stream
-          .getTracks()
-          .forEach(
-            track =>
-              track.stop()
-          );
-
-      };
-
+      reader.readAsDataURL(blob);
+      stream.getTracks().forEach(track => track.stop());
+    };
 
     mediaRecorder.start();
-
-
-    recording =
-      true;
-
-
-    $("recordBtn")
-      .classList
-      .add(
-        "recording"
-      );
-
+    recording = true;
+    $("recordBtn").classList.add("recording");
 
   }catch(error){
-
     console.error(error);
-
-
-    alert(
-      "تعذر الوصول إلى المايكروفون:\n" +
-      error.message
-    );
-
+    alert("تعذر الوصول إلى المايكروفون:\n" + error.message);
   }
-
 }
 
-
 function stopRecording(){
-
-  if(
-    mediaRecorder &&
-    mediaRecorder.state !==
-      "inactive"
-  ){
-
+  if(mediaRecorder && mediaRecorder.state !== "inactive"){
     mediaRecorder.stop();
-
   }
-
-
-  recording =
-    false;
-
-
-  $("recordBtn")
-    .classList
-    .remove(
-      "recording"
-    );
-
+  recording = false;
+  $("recordBtn").classList.remove("recording");
 }
 
 
@@ -1517,241 +596,81 @@ function stopRecording(){
    SETTINGS
    ========================================================= */
 
-$("settingsButton").onclick =
-  () => {
+$("settingsButton").onclick = () => {
+  $("newUsername").value = me;
+  $("newPassword").value = "";
+  showScreen("settingsScreen");
+};
 
-    $("newUsername")
-      .value =
-      me;
+$("settingsBack").onclick = () => {
+  showScreen("friendsScreen");
+};
 
+$("permissionButton").onclick = async () => {
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    stream.getTracks().forEach(track => track.stop());
+    alert("تم السماح بالكاميرا والمايكروفون.");
+  }catch(error){
+    alert("لم يتم السماح بالأذونات:\n" + error.message);
+  }
+};
 
-    $("newPassword")
-      .value = "";
+$("saveAccount").onclick = async () => {
+  const newName = $("newUsername").value.trim();
+  const newPassword = $("newPassword").value.trim();
 
+  if(!newName){
+    alert("اسم المستخدم مطلوب.");
+    return;
+  }
 
-    showScreen(
-      "settingsScreen"
-    );
+  const update = { username: newName };
+  if(newPassword){
+    update.password = newPassword;
+  }
 
-  };
+  const { error } = await db
+    .from("profiles")
+    .update(update)
+    .eq("username", me);
 
+  if(error){
+    alert("تعذر الحفظ:\n" + error.message);
+    return;
+  }
 
-$("settingsBack").onclick =
-  () => {
+  me = newName;
+  localStorage.setItem("message_app_user", me);
+  $("currentUserLabel").textContent = me;
 
-    showScreen(
-      "friendsScreen"
-    );
-
-  };
-
-
-$("permissionButton").onclick =
-  async () => {
-
-    try{
-
-      const stream =
-        await navigator
-          .mediaDevices
-          .getUserMedia({
-
-            audio:
-              true,
-
-            video:
-              true
-
-          });
-
-
-      stream
-        .getTracks()
-        .forEach(
-          track =>
-            track.stop()
-        );
-
-
-      alert(
-        "تم السماح بالكاميرا والمايكروفون."
-      );
-
-
-    }catch(error){
-
-      alert(
-        "لم يتم السماح بالأذونات:\n" +
-        error.message
-      );
-
-    }
-
-  };
-
-
-$("saveAccount").onclick =
-  async () => {
-
-    const newName =
-      $("newUsername")
-        .value
-        .trim();
-
-
-    const newPassword =
-      $("newPassword")
-        .value
-        .trim();
-
-
-    if(!newName){
-
-      alert(
-        "اسم المستخدم مطلوب."
-      );
-
-      return;
-
-    }
-
-
-    const update = {
-
-      username:
-        newName
-
-    };
-
-
-    if(newPassword){
-
-      update.password =
-        newPassword;
-
-    }
-
-
-    const {
-      error
-    } =
-      await db
-        .from("profiles")
-        .update(update)
-        .eq(
-          "username",
-          me
-        );
-
-
-    if(error){
-
-      alert(
-        "تعذر الحفظ:\n" +
-        error.message
-      );
-
-      return;
-
-    }
-
-
-    me =
-      newName;
-
-
-    localStorage.setItem(
-      "message_app_user",
-      me
-    );
-
-
-    $("currentUserLabel")
-      .textContent =
-      me;
-
-
-    alert(
-      "تم حفظ التعديلات."
-    );
-
-
-    showScreen(
-      "friendsScreen"
-    );
-
-  };
+  alert("تم حفظ التعديلات.");
+  showScreen("friendsScreen");
+};
 
 
 /* =========================================================
    CALL SIGNALING
    ========================================================= */
 
-async function sendCallSignal(
-  target,
-  type,
-  data,
-  room = activeCallId
-){
+async function sendCallSignal(target, type, data, room = activeCallId){
+  if(!target || !me || !room) return;
 
-  if(
-    !target ||
-    !me ||
-    !room
-  ){
+  const payload = { ...data, from: me, to: target, callId: room };
 
-    return;
-
-  }
-
-
-  const payload = {
-
-    ...data,
-
-    from:
-      me,
-
-    to:
-      target,
-
-    callId:
-      room
-
-  };
-
-
-  const { error } =
-    await db
-      .from("call_signals")
-      .insert({
-
-        room_id:
-          room,
-
-        sender_id:
-          me,
-
-        signal_type:
-          type,
-
-        payload:
-          payload
-
-      });
-
+  const { error } = await db
+    .from("call_signals")
+    .insert({
+      room_id: room,
+      sender_id: me,
+      signal_type: type,
+      payload: payload
+    });
 
   if(error){
-
-    console.error(
-      "CALL SIGNAL ERROR:",
-      error
-    );
-
+    console.error("CALL SIGNAL ERROR:", error);
     throw error;
-
   }
-
 }
 
 
@@ -1760,114 +679,36 @@ async function sendCallSignal(
    ========================================================= */
 
 function subscribeCalls(){
-
-  if(!me)
-    return;
-
+  if(!me) return;
 
   if(callChannel){
-
-    try{
-
-      db.removeChannel(
-        callChannel
-      );
-
-    }catch(e){}
-
-
-    callChannel =
-      null;
-
+    try{ db.removeChannel(callChannel); }catch(e){}
+    callChannel = null;
   }
 
+  callChannel = db
+    .channel("call-signals-" + me + "-" + Date.now())
+    .on("postgres_changes", {
+      event: "INSERT",
+      schema: "public",
+      table: "call_signals"
+    }, async payload => {
+      try{
+        const row = payload.new;
+        if(!row) return;
 
-  callChannel =
-    db
-      .channel(
-        "call-signals-" +
-        me +
-        "-" +
-        Date.now()
-      )
-      .on(
-        "postgres_changes",
-        {
+        const signal = row.payload || {};
+        if(signal.to !== me) return;
+        if(row.sender_id === me) return;
 
-          event:
-            "INSERT",
-
-          schema:
-            "public",
-
-          table:
-            "call_signals"
-
-        },
-
-        async payload => {
-
-          try{
-
-            const row =
-              payload.new;
-
-
-            if(!row)
-              return;
-
-
-            const signal =
-              row.payload ||
-              {};
-
-
-            if(
-              signal.to !== me
-            ){
-
-              return;
-
-            }
-
-
-            if(
-              row.sender_id === me
-            ){
-
-              return;
-
-            }
-
-
-            await handleCallSignal(
-              row
-            );
-
-
-          }catch(error){
-
-            console.error(
-              "Signal handling error:",
-              error
-            );
-
-          }
-
-        }
-
-      )
-      .subscribe(
-        status => {
-
-          console.log(
-            "Call signaling:",
-            status
-          );
-
-        }
-      );
-
+        await handleCallSignal(row);
+      }catch(error){
+        console.error("Signal handling error:", error);
+      }
+    })
+    .subscribe(status => {
+      console.log("Call signaling:", status);
+    });
 }
 
 
@@ -1876,73 +717,29 @@ function subscribeCalls(){
    ========================================================= */
 
 async function handleCallSignal(row){
-
-  const type =
-    row.signal_type;
-
-
-  const data =
-    row.payload ||
-    {};
-
+  const type = row.signal_type;
+  const data = row.payload || {};
 
   switch(type){
-
     case "call":
-
-      await receiveIncomingCall(
-        data
-      );
-
+      await receiveIncomingCall(data);
       break;
-
-
     case "answer":
-
-      await receiveAnswer(
-        data
-      );
-
+      await receiveAnswer(data);
       break;
-
-
     case "ice":
-
-      await receiveIce(
-        data
-      );
-
+      await receiveIce(data);
       break;
-
-
     case "hangup":
-
-      await receiveHangup(
-        data
-      );
-
+      await receiveHangup(data);
       break;
-
-
     case "declined":
-
-      await receiveDeclined(
-        data
-      );
-
+      await receiveDeclined(data);
       break;
-
-
     case "busy":
-
-      await receiveBusy(
-        data
-      );
-
+      await receiveBusy(data);
       break;
-
   }
-
 }
 
 
@@ -1951,85 +748,28 @@ async function handleCallSignal(row){
    ========================================================= */
 
 async function receiveIncomingCall(data){
+  if(!data.callId) return;
 
-  if(!data.callId)
-    return;
-
-
-  if(
-    activeCallUser ||
-    pc ||
-    incomingCaller
-  ){
-
+  if(activeCallUser || pc || incomingCaller){
     try{
-
-      await sendCallSignal(
-        data.from,
-        "busy",
-        {
-          callId:
-            data.callId
-        },
-        data.callId
-      );
-
+      await sendCallSignal(data.from, "busy", { callId: data.callId }, data.callId);
     }catch(error){
-
-      console.error(
-        error
-      );
-
+      console.error(error);
     }
-
-
     return;
-
   }
 
-
-  incomingCaller =
-    data.from;
-
-
-  incomingCallId =
-    data.callId;
-
-
-  incomingOffer =
-    data.offer;
-
-
-  incomingVideo =
-    !!data.video;
-
+  incomingCaller = data.from;
+  incomingCallId = data.callId;
+  incomingOffer = data.offer;
+  incomingVideo = !!data.video;
 
   startRingtone();
 
-
-  $("incomingAvatar")
-    .textContent =
-    initials(
-      incomingCaller
-    );
-
-
-  $("incomingName")
-    .textContent =
-    incomingCaller;
-
-
-  $("incomingType")
-    .textContent =
-      incomingVideo
-        ? "📹 مكالمة فيديو واردة"
-        : "📞 مكالمة صوتية واردة";
-
-
-  $("incoming")
-    .classList
-    .add("show");
-
+  $("incomingAvatar").textContent = initials(incomingCaller);
+  $("incomingName").textContent = incomingCaller;
+  $("incomingType").textContent = incomingVideo ? "📹 مكالمة فيديو واردة" : "📞 مكالمة صوتية واردة";
+  $("incoming").classList.add("show");
 }
 
 
@@ -2037,167 +777,53 @@ async function receiveIncomingCall(data){
    START CALL
    ========================================================= */
 
-$("audioCall").onclick =
-  () =>
-    startCall(false);
-
-
-$("videoCall").onclick =
-  () =>
-    startCall(true);
-
+$("audioCall").onclick = () => startCall(false);
+$("videoCall").onclick = () => startCall(true);
 
 async function startCall(video){
+  if(!currentFriend) return;
 
-  if(!currentFriend)
+  if(activeCallUser || pc){
+    alert("لديك مكالمة نشطة بالفعل.");
     return;
-
-
-  if(
-    activeCallUser ||
-    pc
-  ){
-
-    alert(
-      "لديك مكالمة نشطة بالفعل."
-    );
-
-    return;
-
   }
 
-
-  if(
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ){
-
-    alert(
-      "الكاميرا والمايكروفون يحتاجان إلى HTTPS."
-    );
-
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert("الكاميرا والمايكروفون يحتاجان إلى HTTPS.");
     return;
-
   }
 
-
-  activeCallUser =
-    currentFriend;
-
-
-  activeCallId =
-    callId();
-
-
-  muted =
-    false;
-
-
-  cameraOff =
-    false;
-
-
-  pendingIce =
-    [];
-
+  activeCallUser = currentFriend;
+  activeCallId = callId();
+  muted = false;
+  cameraOff = false;
+  pendingIce = [];
 
   showCall();
-
-
-  $("callTitle")
-    .textContent =
-      video
-        ? "مكالمة فيديو مع " +
-          activeCallUser
-        : "مكالمة صوتية مع " +
-          activeCallUser;
-
-
-  setCallStatus(
-    "جاري تشغيل الكاميرا والمايكروفون..."
-  );
-
+  $("callTitle").textContent = video ? "مكالمة فيديو مع " + activeCallUser : "مكالمة صوتية مع " + activeCallUser;
+  setCallStatus("جاري تشغيل الكاميرا والمايكروفون...");
 
   try{
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: video });
+    createPeerConnection(activeCallUser, activeCallId);
+    setupCallVideos(localStream, video);
 
-    localStream =
-      await navigator
-        .mediaDevices
-        .getUserMedia({
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
 
-          audio:
-            true,
+    await sendCallSignal(activeCallUser, "call", {
+      callId: activeCallId,
+      video: video,
+      offer: offer
+    }, activeCallId);
 
-          video:
-            video
-
-        });
-
-
-    createPeerConnection(
-      activeCallUser,
-      activeCallId
-    );
-
-
-    setupCallVideos(
-      localStream,
-      video
-    );
-
-
-    const offer =
-      await pc.createOffer();
-
-
-    await pc.setLocalDescription(
-      offer
-    );
-
-
-    await sendCallSignal(
-      activeCallUser,
-      "call",
-      {
-
-        callId:
-          activeCallId,
-
-        video:
-          video,
-
-        offer:
-          offer
-
-      },
-      activeCallId
-    );
-
-
-    setCallStatus(
-      "في انتظار قبول المكالمة..."
-    );
-
+    setCallStatus("في انتظار قبول المكالمة...");
 
   }catch(error){
-
-    console.error(
-      error
-    );
-
-
-    alert(
-      "تعذر بدء المكالمة:\n" +
-      error.message
-    );
-
-
-    await endCall(
-      false
-    );
-
+    console.error(error);
+    alert("تعذر بدء المكالمة:\n" + error.message);
+    await endCall(false);
   }
-
 }
 
 
@@ -2205,189 +831,60 @@ async function startCall(video){
    ACCEPT INCOMING CALL
    ========================================================= */
 
-$("acceptCall").onclick =
-  acceptIncoming;
-
+$("acceptCall").onclick = acceptIncoming;
 
 async function acceptIncoming(){
-
   stopRingtone();
+  $("incoming").classList.remove("show");
 
-
-  $("incoming")
-    .classList
-    .remove("show");
-
-
-  if(
-    !incomingCaller ||
-    !incomingCallId ||
-    !incomingOffer
-  ){
-
+  if(!incomingCaller || !incomingCallId || !incomingOffer){
     clearIncoming();
-
     return;
-
   }
 
+  const caller = incomingCaller;
+  const id = incomingCallId;
+  const offer = incomingOffer;
+  const video = incomingVideo;
 
-  const caller =
-    incomingCaller;
-
-
-  const id =
-    incomingCallId;
-
-
-  const offer =
-    incomingOffer;
-
-
-  const video =
-    incomingVideo;
-
-
-  activeCallUser =
-    caller;
-
-
-  activeCallId =
-    id;
-
-
+  activeCallUser = caller;
+  activeCallId = id;
   clearIncoming();
-
-
-  pendingIce =
-    [];
-
+  pendingIce = [];
 
   showCall();
-
-
-  $("callTitle")
-    .textContent =
-      video
-        ? "مكالمة فيديو مع " +
-          caller
-        : "مكالمة صوتية مع " +
-          caller;
-
-
-  setCallStatus(
-    "جاري تشغيل الكاميرا والمايكروفون..."
-  );
-
+  $("callTitle").textContent = video ? "مكالمة فيديو مع " + caller : "مكالمة صوتية مع " + caller;
+  setCallStatus("جاري تشغيل الكاميرا والمايكروفون...");
 
   try{
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: video });
+    createPeerConnection(caller, id);
+    setupCallVideos(localStream, video);
 
-    localStream =
-      await navigator
-        .mediaDevices
-        .getUserMedia({
-
-          audio:
-            true,
-
-          video:
-            video
-
-        });
-
-
-    createPeerConnection(
-      caller,
-      id
-    );
-
-
-    setupCallVideos(
-      localStream,
-      video
-    );
-
-
-    await pc.setRemoteDescription(
-      new RTCSessionDescription(
-        offer
-      )
-    );
-
-
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
     await flushIce();
 
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
 
-    const answer =
-      await pc.createAnswer();
+    await sendCallSignal(caller, "answer", {
+      callId: id,
+      answer: pc.localDescription
+    }, id);
 
-
-    await pc.setLocalDescription(
-      answer
-    );
-
-
-    await sendCallSignal(
-      caller,
-      "answer",
-      {
-
-        callId:
-          id,
-
-        answer:
-          pc.localDescription
-
-      },
-      id
-    );
-
-
-    setCallStatus(
-      "جاري الاتصال..."
-    );
-
+    setCallStatus("جاري الاتصال...");
 
   }catch(error){
-
-    console.error(
-      error
-    );
-
-
+    console.error(error);
     try{
-
-      await sendCallSignal(
-        caller,
-        "declined",
-        {
-          callId:
-            id
-        },
-        id
-      );
-
+      await sendCallSignal(caller, "declined", { callId: id }, id);
     }catch(e){
-
-      console.error(
-        e
-      );
-
+      console.error(e);
     }
 
-
-    alert(
-      "تعذر قبول المكالمة:\n" +
-      error.message
-    );
-
-
-    await endCall(
-      false
-    );
-
+    alert("تعذر قبول المكالمة:\n" + error.message);
+    await endCall(false);
   }
-
 }
 
 
@@ -2395,58 +892,23 @@ async function acceptIncoming(){
    REJECT CALL
    ========================================================= */
 
-$("rejectCall").onclick =
-  async () => {
+$("rejectCall").onclick = async () => {
+  stopRingtone();
+  const caller = incomingCaller;
+  const id = incomingCallId;
 
-    stopRingtone();
+  $("incoming").classList.remove("show");
 
-
-    const caller =
-      incomingCaller;
-
-
-    const id =
-      incomingCallId;
-
-
-    $("incoming")
-      .classList
-      .remove("show");
-
-
-    if(
-      caller &&
-      id
-    ){
-
-      try{
-
-        await sendCallSignal(
-          caller,
-          "declined",
-          {
-
-            callId:
-              id
-
-          },
-          id
-        );
-
-      }catch(error){
-
-        console.error(
-          error
-        );
-
-      }
-
+  if(caller && id){
+    try{
+      await sendCallSignal(caller, "declined", { callId: id }, id);
+    }catch(error){
+      console.error(error);
     }
+  }
 
-
-    clearIncoming();
-
-  };
+  clearIncoming();
+};
 
 
 /* =========================================================
@@ -2454,22 +916,10 @@ $("rejectCall").onclick =
    ========================================================= */
 
 function clearIncoming(){
-
-  incomingCaller =
-    "";
-
-
-  incomingCallId =
-    "";
-
-
-  incomingOffer =
-    null;
-
-
-  incomingVideo =
-    false;
-
+  incomingCaller = "";
+  incomingCallId = "";
+  incomingOffer = null;
+  incomingVideo = false;
 }
 
 
@@ -2478,57 +928,19 @@ function clearIncoming(){
    ========================================================= */
 
 async function receiveAnswer(data){
-
-  if(!pc)
-    return;
-
-
-  if(!activeCallId)
-    return;
-
-
-  if(
-    data.callId !==
-    activeCallId
-  )
-    return;
-
-
-  if(!data.answer)
-    return;
-
+  if(!pc) return;
+  if(!activeCallId) return;
+  if(data.callId !== activeCallId) return;
+  if(!data.answer) return;
 
   try{
-
-    await pc.setRemoteDescription(
-      new RTCSessionDescription(
-        data.answer
-      )
-    );
-
-
+    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
     await flushIce();
-
-
-    setCallStatus(
-      "متصل الآن"
-    );
-
-
+    setCallStatus("متصل الآن");
   }catch(error){
-
-    console.error(
-      "Answer error:",
-      error
-    );
-
-
-    setCallStatus(
-      "فشل استقبال الرد"
-    );
-
+    console.error("Answer error:", error);
+    setCallStatus("فشل استقبال الرد");
   }
-
 }
 
 
@@ -2537,76 +949,25 @@ async function receiveAnswer(data){
    ========================================================= */
 
 async function receiveIce(data){
+  if(!data || !data.candidate) return;
 
-  if(
-    !data ||
-    !data.candidate
-  )
+  const signalCallId = data.callId;
+  if(!signalCallId) return;
+
+  if(signalCallId !== activeCallId && signalCallId !== incomingCallId){
     return;
-
-
-  const signalCallId =
-    data.callId;
-
-
-  if(!signalCallId)
-    return;
-
-
-  if(
-    signalCallId !==
-      activeCallId &&
-    signalCallId !==
-      incomingCallId
-  ){
-
-    return;
-
   }
 
-
-  if(!pc){
-
-    pendingIce.push(
-      data.candidate
-    );
-
+  if(!pc || !pc.remoteDescription || !pc.remoteDescription.type){
+    pendingIce.push(data.candidate);
     return;
-
   }
-
-
-  if(
-    !pc.remoteDescription ||
-    !pc.remoteDescription.type
-  ){
-
-    pendingIce.push(
-      data.candidate
-    );
-
-    return;
-
-  }
-
 
   try{
-
-    await pc.addIceCandidate(
-      new RTCIceCandidate(
-        data.candidate
-      )
-    );
-
+    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
   }catch(error){
-
-    console.error(
-      "ICE add error:",
-      error
-    );
-
+    console.error("ICE add error:", error);
   }
-
 }
 
 
@@ -2615,23 +976,10 @@ async function receiveIce(data){
    ========================================================= */
 
 async function receiveHangup(data){
-
-  if(
-    data.callId !==
-      activeCallId &&
-    data.callId !==
-      incomingCallId
-  ){
-
+  if(data.callId !== activeCallId && data.callId !== incomingCallId){
     return;
-
   }
-
-
-  await endCall(
-    false
-  );
-
+  await endCall(false);
 }
 
 
@@ -2640,26 +988,9 @@ async function receiveHangup(data){
    ========================================================= */
 
 async function receiveDeclined(data){
-
-  if(
-    data.callId !==
-    activeCallId
-  ){
-
-    return;
-
-  }
-
-
-  alert(
-    "تم رفض المكالمة."
-  );
-
-
-  await endCall(
-    false
-  );
-
+  if(data.callId !== activeCallId) return;
+  alert("تم رفض المكالمة.");
+  await endCall(false);
 }
 
 
@@ -2668,26 +999,9 @@ async function receiveDeclined(data){
    ========================================================= */
 
 async function receiveBusy(data){
-
-  if(
-    data.callId !==
-    activeCallId
-  ){
-
-    return;
-
-  }
-
-
-  alert(
-    "الشخص الآخر مشغول."
-  );
-
-
-  await endCall(
-    false
-  );
-
+  if(data.callId !== activeCallId) return;
+  alert("الشخص الآخر مشغول.");
+  await endCall(false);
 }
 
 
@@ -2695,254 +1009,79 @@ async function receiveBusy(data){
    PEER CONNECTION
    ========================================================= */
 
-function createPeerConnection(
-  friend,
-  id
-){
-
+function createPeerConnection(friend, id){
   if(pc){
+    try{ pc.close(); }catch(e){}
+  }
+
+  pc = new RTCPeerConnection(RTC_CONFIG);
+  remoteStream = new MediaStream();
+
+  pc.ontrack = event => {
+    if(event.streams && event.streams[0]){
+      event.streams[0].getTracks().forEach(track => {
+        if(!remoteStream.getTracks().includes(track)){
+          remoteStream.addTrack(track);
+        }
+      });
+    }else{
+      if(!remoteStream.getTracks().includes(event.track)){
+        remoteStream.addTrack(event.track);
+      }
+    }
+
+    const remote = document.querySelector(".remote");
+    if(remote){
+      remote.srcObject = remoteStream;
+      remote.play().catch(error => {
+        console.warn("Remote play:", error);
+      });
+    }
+  };
+
+  pc.onicecandidate = async event => {
+    if(!event.candidate) return;
 
     try{
-
-      pc.close();
-
-    }catch(e){}
-
-  }
-
-
-  pc =
-    new RTCPeerConnection(
-      RTC_CONFIG
-    );
-
-
-  remoteStream =
-    new MediaStream();
-
-
-  pc.ontrack =
-    event => {
-
-      if(
-        event.streams &&
-        event.streams[0]
-      ){
-
-        event.streams[0]
-          .getTracks()
-          .forEach(
-            track => {
-
-              if(
-                !remoteStream
-                  .getTracks()
-                  .includes(
-                    track
-                  )
-              ){
-
-                remoteStream.addTrack(
-                  track
-                );
-
-              }
-
-            }
-          );
-
-      }else{
-
-        if(
-          !remoteStream
-            .getTracks()
-            .includes(
-              event.track
-            )
-        ){
-
-          remoteStream.addTrack(
-            event.track
-          );
-
-        }
-
-      }
-
-
-      const remote =
-        document.querySelector(
-          ".remote"
-        );
-
-
-      if(remote){
-
-        remote.srcObject =
-          remoteStream;
-
-
-        remote.play()
-          .catch(
-            error => {
-
-              console.warn(
-                "Remote play:",
-                error
-              );
-
-            }
-          );
-
-      }
-
-    };
-
-
-  pc.onicecandidate =
-    async event => {
-
-      if(
-        !event.candidate
-      ){
-
-        return;
-
-      }
-
-
-      try{
-
-        const candidate =
-          event.candidate.toJSON
-            ? event.candidate.toJSON()
-            : {
-
-                candidate:
-                  event.candidate.candidate,
-
-                sdpMid:
-                  event.candidate.sdpMid,
-
-                sdpMLineIndex:
-                  event.candidate.sdpMLineIndex,
-
-                usernameFragment:
-                  event.candidate.usernameFragment
-
-              };
-
-
-        await sendCallSignal(
-          friend,
-          "ice",
-          {
-
-            callId:
-              id,
-
-            candidate:
-              candidate
-
-          },
-          id
-        );
-
-
-      }catch(error){
-
-        console.error(
-          "ICE send error:",
-          error
-        );
-
-      }
-
-    };
-
-
-  pc.onconnectionstatechange =
-    () => {
-
-      if(!pc)
-        return;
-
-
-      const state =
-        pc.connectionState;
-
-
-      if(
-        state ===
-        "connected"
-      ){
-
-        setCallStatus(
-          "متصل الآن"
-        );
-
-      }
-      else if(
-        state ===
-        "connecting"
-      ){
-
-        setCallStatus(
-          "جاري الاتصال..."
-        );
-
-      }
-      else if(
-        state ===
-        "disconnected"
-      ){
-
-        setCallStatus(
-          "الاتصال انقطع..."
-        );
-
-      }
-      else if(
-        state ===
-        "failed"
-      ){
-
-        setCallStatus(
-          "فشل الاتصال"
-        );
-
-      }
-      else if(
-        state ===
-        "closed"
-      ){
-
-        setCallStatus(
-          "انتهت المكالمة"
-        );
-
-      }
-
-    };
-
+      const candidate = event.candidate.toJSON ? event.candidate.toJSON() : {
+        candidate: event.candidate.candidate,
+        sdpMid: event.candidate.sdpMid,
+        sdpMLineIndex: event.candidate.sdpMLineIndex,
+        usernameFragment: event.candidate.usernameFragment
+      };
+
+      await sendCallSignal(friend, "ice", {
+        callId: id,
+        candidate: candidate
+      }, id);
+
+    }catch(error){
+      console.error("ICE send error:", error);
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    if(!pc) return;
+    const state = pc.connectionState;
+
+    if(state === "connected"){
+      setCallStatus("متصل الآن");
+    }else if(state === "connecting"){
+      setCallStatus("جاري الاتصال...");
+    }else if(state === "disconnected"){
+      setCallStatus("الاتصال انقطع...");
+    }else if(state === "failed"){
+      setCallStatus("فشل الاتصال");
+    }else if(state === "closed"){
+      setCallStatus("انتهت المكالمة");
+    }
+  };
 
   if(localStream){
-
-    localStream
-      .getTracks()
-      .forEach(
-        track => {
-
-          pc.addTrack(
-            track,
-            localStream
-          );
-
-        }
-      );
-
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
   }
-
 }
 
 
@@ -2951,56 +1090,20 @@ function createPeerConnection(
    ========================================================= */
 
 async function flushIce(){
+  if(!pc) return;
+  if(!pc.remoteDescription || !pc.remoteDescription.type) return;
+  if(!pendingIce.length) return;
 
-  if(!pc)
-    return;
+  const list = [...pendingIce];
+  pendingIce = [];
 
-
-  if(
-    !pc.remoteDescription ||
-    !pc.remoteDescription.type
-  ){
-
-    return;
-
-  }
-
-
-  if(!pendingIce.length)
-    return;
-
-
-  const list =
-    [...pendingIce];
-
-
-  pendingIce =
-    [];
-
-
-  for(
-    const candidate of list
-  ){
-
+  for(const candidate of list){
     try{
-
-      await pc.addIceCandidate(
-        new RTCIceCandidate(
-          candidate
-        )
-      );
-
+      await pc.addIceCandidate(new RTCIceCandidate(candidate));
     }catch(error){
-
-      console.warn(
-        "Queued ICE error:",
-        error
-      );
-
+      console.warn("Queued ICE error:", error);
     }
-
   }
-
 }
 
 
@@ -3008,117 +1111,36 @@ async function flushIce(){
    CALL UI
    ========================================================= */
 
-function setupCallVideos(
-  stream,
-  video
-){
+function setupCallVideos(stream, video){
+  const stage = $("callStage");
+  stage.innerHTML = "";
 
-  const stage =
-    $("callStage");
+  const remote = document.createElement("video");
+  remote.className = "remote";
+  remote.autoplay = true;
+  remote.playsInline = true;
+  remote.setAttribute("playsinline", "");
 
-
-  stage.innerHTML =
-    "";
-
-
-  const remote =
-    document.createElement(
-      "video"
-    );
-
-
-  remote.className =
-    "remote";
-
-
-  remote.autoplay =
-    true;
-
-
-  remote.playsInline =
-    true;
-
-
-  remote.setAttribute(
-    "playsinline",
-    ""
-  );
-
-
-  const local =
-    document.createElement(
-      "video"
-    );
-
-
-  local.className =
-    "local";
-
-
-  local.autoplay =
-    true;
-
-
-  local.playsInline =
-    true;
-
-
-  local.muted =
-    true;
-
-
-  local.setAttribute(
-    "playsinline",
-    ""
-  );
-
-
-  local.srcObject =
-    stream;
-
+  const local = document.createElement("video");
+  local.className = "local";
+  local.autoplay = true;
+  local.playsInline = true;
+  local.muted = true;
+  local.setAttribute("playsinline", "");
+  local.srcObject = stream;
 
   if(!video){
-
-    local.style.display =
-      "none";
-
-
-    const label =
-      document.createElement(
-        "div"
-      );
-
-
-    label.className =
-      "audio-label";
-
-
-    label.textContent =
-      "📞 مكالمة صوتية";
-
-
-    stage.appendChild(
-      label
-    );
-
+    local.style.display = "none";
+    const label = document.createElement("div");
+    label.className = "audio-label";
+    label.textContent = "📞 مكالمة صوتية";
+    stage.appendChild(label);
   }
 
+  stage.appendChild(remote);
+  stage.appendChild(local);
 
-  stage.appendChild(
-    remote
-  );
-
-
-  stage.appendChild(
-    local
-  );
-
-
-  local.play()
-    .catch(
-      () => {}
-    );
-
+  local.play().catch(() => {});
 }
 
 
@@ -3126,218 +1148,82 @@ function setupCallVideos(
    MUTE
    ========================================================= */
 
-$("muteBtn").onclick =
-  () => {
+$("muteBtn").onclick = () => {
+  if(!localStream) return;
+  const tracks = localStream.getAudioTracks();
+  if(!tracks.length) return;
 
-    if(!localStream)
-      return;
+  muted = !muted;
+  tracks.forEach(track => {
+    track.enabled = !muted;
+  });
 
-
-    const tracks =
-      localStream
-        .getAudioTracks();
-
-
-    if(!tracks.length)
-      return;
-
-
-    muted =
-      !muted;
-
-
-    tracks.forEach(
-      track => {
-
-        track.enabled =
-          !muted;
-
-      }
-    );
-
-
-    $("muteBtn")
-      .textContent =
-      muted
-        ? "🔇"
-        : "🎤";
-
-  };
+  $("muteBtn").textContent = muted ? "🔇" : "🎤";
+};
 
 
 /* =========================================================
    CAMERA
    ========================================================= */
 
-$("cameraBtn").onclick =
-  () => {
+$("cameraBtn").onclick = () => {
+  if(!localStream) return;
+  const tracks = localStream.getVideoTracks();
+  if(!tracks.length) return;
 
-    if(!localStream)
-      return;
+  cameraOff = !cameraOff;
+  tracks.forEach(track => {
+    track.enabled = !cameraOff;
+  });
 
-
-    const tracks =
-      localStream
-        .getVideoTracks();
-
-
-    if(!tracks.length)
-      return;
-
-
-    cameraOff =
-      !cameraOff;
-
-
-    tracks.forEach(
-      track => {
-
-        track.enabled =
-          !cameraOff;
-
-      }
-    );
-
-
-    $("cameraBtn")
-      .textContent =
-      cameraOff
-        ? "🚫"
-        : "📹";
-
-  };
+  $("cameraBtn").textContent = cameraOff ? "🚫" : "📹";
+};
 
 
 /* =========================================================
    HANGUP
    ========================================================= */
 
-$("hangupBtn").onclick =
-  () =>
-    endCall(true);
+$("hangupBtn").onclick = () => endCall(true);
 
-
-async function endCall(
-  sendSignalToOther
-){
-
+async function endCall(sendSignalToOther){
   stopRingtone();
 
+  const user = activeCallUser;
+  const id = activeCallId;
 
-  const user =
-    activeCallUser;
-
-
-  const id =
-    activeCallId;
-
-
-  if(
-    sendSignalToOther &&
-    user &&
-    id
-  ){
-
+  if(sendSignalToOther && user && id){
     try{
-
-      await sendCallSignal(
-        user,
-        "hangup",
-        {
-
-          callId:
-            id
-
-        },
-        id
-      );
-
+      await sendCallSignal(user, "hangup", { callId: id }, id);
     }catch(error){
-
-      console.error(
-        "Hangup signal error:",
-        error
-      );
-
+      console.error("Hangup signal error:", error);
     }
-
   }
-
 
   if(localStream){
-
-    localStream
-      .getTracks()
-      .forEach(
-        track =>
-          track.stop()
-      );
-
-
-    localStream =
-      null;
-
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
   }
-
 
   if(pc){
-
     try{
-
-      pc.ontrack =
-        null;
-
-
-      pc.onicecandidate =
-        null;
-
-
-      pc.onconnectionstatechange =
-        null;
-
-
+      pc.ontrack = null;
+      pc.onicecandidate = null;
+      pc.onconnectionstatechange = null;
       pc.close();
-
     }catch(e){}
-
-
-    pc =
-      null;
-
+    pc = null;
   }
 
+  remoteStream = null;
+  pendingIce = [];
+  activeCallUser = "";
+  activeCallId = "";
+  muted = false;
+  cameraOff = false;
 
-  remoteStream =
-    null;
-
-
-  pendingIce =
-    [];
-
-
-  activeCallUser =
-    "";
-
-
-  activeCallId =
-    "";
-
-
-  muted =
-    false;
-
-
-  cameraOff =
-    false;
-
-
-  $("callStage")
-    .innerHTML =
-    "";
-
-
+  $("callStage").innerHTML = "";
   hideCall();
-
 }
 
 
@@ -3345,84 +1231,29 @@ async function endCall(
    PAGE CLOSE
    ========================================================= */
 
-window.addEventListener(
-  "beforeunload",
-  () => {
-
-    if(localStream){
-
-      localStream
-        .getTracks()
-        .forEach(
-          track =>
-            track.stop()
-        );
-
-    }
-
-
-    if(pc){
-
-      try{
-
-        pc.close();
-
-      }catch(e){}
-
-    }
-
+window.addEventListener("beforeunload", () => {
+  if(localStream){
+    localStream.getTracks().forEach(track => track.stop());
   }
-);
+  if(pc){
+    try{ pc.close(); }catch(e){}
+  }
+});
 
 
 /* =========================================================
    SERVICE WORKER MESSAGES
    ========================================================= */
 
-if(
-  "serviceWorker" in navigator
-){
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.addEventListener("message", async event => {
+    const data = event.data || {};
+    console.log("Message from Service Worker:", data);
 
-  navigator.serviceWorker.addEventListener(
-    "message",
-    async event => {
-
-      const data =
-        event.data || {};
-
-
-      console.log(
-        "Message from Service Worker:",
-        data
-      );
-
-
-      /*
-       * في هذه المرحلة نعرض فقط البيانات.
-       *
-       * في الخطوة التالية سنربط:
-       *
-       * accept-call
-       * reject-call
-       *
-       * مع نظام المكالمات.
-       */
-
-      if(
-        data.type ===
-        "incoming-call"
-      ){
-
-        console.log(
-          "Incoming push call:",
-          data
-        );
-
-      }
-
+    if(data.type === "incoming-call"){
+      console.log("Incoming push call:", data);
     }
-  );
-
+  });
 }
 
 
@@ -3430,37 +1261,11 @@ if(
    ERROR DEBUG
    ========================================================= */
 
-window.addEventListener(
-  "unhandledrejection",
-  event => {
+window.addEventListener("unhandledrejection", event => {
+  console.error("Unhandled:", event.reason);
+});
 
-    console.error(
-      "Unhandled:",
-      event.reason
-    );
-
-  }
-);
-
-
-window.onerror =
-  (
-    message,
-    source,
-    line,
-    column,
-    error
-  ) => {
-
-    console.error(
-      message,
-      source,
-      line,
-      column,
-      error
-    );
-
-
-    return false;
-
-  };
+window.onerror = (message, source, line, column, error) => {
+  console.error(message, source, line, column, error);
+  return false;
+};
